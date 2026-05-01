@@ -1,4 +1,4 @@
-# Convent Schedule Helper
+# Monastery Schedule Helper
 
 A small, local-first weekly schedule for a religious community. The week IS the
 interface — fill in duty cells from a sister palette, see conflicts inline,

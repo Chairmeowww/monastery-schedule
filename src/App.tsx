@@ -10,7 +10,7 @@ import { Grid } from './components/Grid';
 import { SisterPalette } from './components/SisterPalette';
 import { PrintFrame } from './components/PrintFrame';
 
-const STORAGE_PREFIX = 'convent-schedule:week:';
+const STORAGE_PREFIX = 'monastery-schedule:week:';
 
 function readWeek(weekOf: string): Week {
   try {
