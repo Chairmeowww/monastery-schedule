@@ -93,9 +93,22 @@ export function Tour({ onClose }: { onClose: () => void }) {
             Skip tour
           </button>
           <div className="tour-nav">
-            {step > 0 && <button onClick={() => setStep((s) => s - 1)}>Back</button>}
+            {step > 0 && (
+              <button
+                onClick={(e) => {
+                  setStep((s) => s - 1);
+                  (e.currentTarget as HTMLButtonElement).blur();
+                }}
+              >
+                Back
+              </button>
+            )}
             <button
-              onClick={() => (isLast ? onClose() : setStep((s) => s + 1))}
+              onClick={(e) => {
+                if (isLast) onClose();
+                else setStep((s) => s + 1);
+                (e.currentTarget as HTMLButtonElement).blur();
+              }}
               className="tour-next"
             >
               {isLast ? 'Done' : 'Next'}

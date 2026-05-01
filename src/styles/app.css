@@ -70,10 +70,14 @@
   color: var(--paper) !important;
   border: 1px solid var(--accent) !important;
   font-weight: 500;
+  transition: filter 140ms ease, border-color 140ms ease;
 }
-.tour-card .tour-next:hover {
-  background: var(--ink) !important;
-  border-color: var(--ink) !important;
+.tour-card .tour-next:hover { filter: brightness(0.9); }
+.tour-card .tour-next:active { filter: brightness(0.82); }
+.tour-card .tour-next:focus { outline: none; }
+.tour-card .tour-next:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 .tour-highlight {
   position: relative;
