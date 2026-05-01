@@ -1,0 +1,118 @@
+:root {
+  --ink: #2A2724;
+  --soft: #3F3A33;
+  --muted: #6E655A;
+  --hair-light: #D8D2C7;
+  --hair: #B8B0A4;
+  --accent: #9C8A5C;
+  --accent-soft: #BFAE83;
+  --ground: #FAF7F2;
+  --paper: #FFFFFF;
+  --soft-red: #B86A5E;
+  --soft-red-bg: #F4E5E2;
+  --soft-green: #7C8F6A;
+  --soft-green-bg: #EAEEDF;
+  --soft-gold: #C9A958;
+  --soft-gold-bg: #F4ECD7;
+
+  --font-serif: 'EB Garamond', 'Garamond', 'Georgia', serif;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-md: 1.125rem;
+  --fs-lg: 1.375rem;
+  --fs-xl: 1.75rem;
+  --fs-display: 2.25rem;
+
+  --radius-sm: 3px;
+  --radius: 5px;
+  --radius-lg: 8px;
+
+  --shadow-soft: 0 1px 0 rgba(42, 39, 36, 0.04);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: var(--fs-base);
+  line-height: 1.5;
+  font-feature-settings: 'liga', 'kern';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+button:hover:not(:disabled) {
+  background: var(--paper);
+  border-color: var(--accent-soft);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* Section labels: small caps, letter-spaced, muted */
+.label {
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+/* Subtle italic display headings */
+.display {
+  font-style: italic;
+  font-weight: 500;
+  font-size: var(--fs-display);
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+/* Conflict colors */
+.conflict-hard { color: var(--soft-red); }
+.conflict-soft { color: var(--soft-gold); }
+.clear { color: var(--soft-green); }
+
+@media (max-width: 800px) {
+  html { font-size: 15px; }
+}

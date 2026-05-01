@@ -1,0 +1,34 @@
+@media print {
+  @page {
+    size: letter landscape;
+    margin: 0.5in;
+  }
+
+  html, body, #root {
+    background: white !important;
+    color: var(--ink) !important;
+  }
+
+  /* Hide everything that's not the print frame */
+  body > #root > .app > :not(.print-frame),
+  .no-print {
+    display: none !important;
+  }
+
+  .print-frame {
+    display: block !important;
+    page-break-inside: avoid;
+  }
+
+  .print-frame .grid {
+    page-break-inside: avoid;
+  }
+
+  /* Hard conflicts still show — soft ones suppressed for the wall */
+  .conflict.soft { display: none !important; }
+}
+
+/* Print frame is hidden by default; only renders for print or print-preview */
+.print-frame {
+  display: none;
+}
