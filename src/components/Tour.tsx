@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 type Step = {
   target?: string;
@@ -78,7 +79,7 @@ export function Tour({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [step, isLast, onClose]);
 
-  return (
+  return createPortal(
     <div className="tour no-print">
       <div className="tour-backdrop" />
       <div className="tour-card" role="dialog" aria-label={`Tour step ${step + 1}: ${cur.title}`}>
@@ -102,6 +103,7 @@ export function Tour({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

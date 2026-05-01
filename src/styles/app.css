@@ -4,12 +4,12 @@
   padding: var(--space-6) var(--space-6) var(--space-7);
 }
 
-/* Tour */
-.tour { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+/* Tour — rendered to document.body via portal so no parent stacking context can bury it */
+.tour { pointer-events: none; }
 .tour-backdrop {
   position: fixed; inset: 0;
   background: rgba(42, 39, 36, 0.32);
-  z-index: 200;
+  z-index: 9998;
   pointer-events: auto;
   cursor: default;
 }
@@ -25,7 +25,7 @@
   max-width: 520px;
   width: calc(100% - 48px);
   box-shadow: 0 8px 32px rgba(42, 39, 36, 0.18);
-  z-index: 202;
+  z-index: 10000;
   pointer-events: auto;
 }
 .tour-card .tour-step-num {
@@ -71,7 +71,7 @@
 .tour-next:hover { background: var(--ink); border-color: var(--ink); }
 .tour-highlight {
   position: relative;
-  z-index: 201;
+  z-index: 9999;
   outline: 2px solid var(--accent);
   outline-offset: 4px;
   border-radius: var(--radius);
