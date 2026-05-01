@@ -28,6 +28,18 @@ function dayHumanShort(d: DayOfWeek, week: Week): string {
   return isSolitude ? `${base} · solitude` : base;
 }
 
+function dayAppointmentsLabel(d: DayOfWeek, week: Week, rosterById: Record<string, Sister>): string {
+  const appts = week.appointments.filter((a) => a.day === d);
+  if (appts.length === 0) return '';
+  return appts
+    .map((a) => {
+      const name = rosterById[a.sisterId]?.name ?? a.sisterId;
+      const type = a.type ? a.type : 'appt';
+      return `${name} · ${type}`;
+    })
+    .join(', ');
+}
+
 export function Grid({
   week,
   conflicts,
@@ -46,14 +58,18 @@ export function Grid({
   return (
     <div className="grid">
       <div className="head" />
-      {DAYS.map((d) => (
-        <div
-          key={d}
-          className={`head ${d === 'sun' ? 'sunday-divider' : ''}`}
-        >
-          {dayHumanShort(d, week)}
-        </div>
-      ))}
+      {DAYS.map((d) => {
+        const appts = dayAppointmentsLabel(d, week, rosterById);
+        return (
+          <div
+            key={d}
+            className={`head ${d === 'sun' ? 'sunday-divider' : ''}`}
+          >
+            {dayHumanShort(d, week)}
+            {appts && <span className="day-appointments" title="Appointments today">{appts}</span>}
+          </div>
+        );
+      })}
       {SLOTS.map((slot) => (
         <SlotRow
           key={slot}

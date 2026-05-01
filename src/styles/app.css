@@ -4,6 +4,90 @@
   padding: var(--space-6) var(--space-6) var(--space-7);
 }
 
+/* Tour */
+.tour { position: fixed; inset: 0; z-index: 200; pointer-events: none; }
+.tour-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(42, 39, 36, 0.32);
+  pointer-events: auto;
+}
+.tour-card {
+  position: absolute;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  max-width: 480px;
+  width: calc(100% - 48px);
+  box-shadow: 0 8px 32px rgba(42, 39, 36, 0.18);
+  pointer-events: auto;
+}
+.tour-card .tour-step-num {
+  font-variant: small-caps;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  margin-bottom: var(--space-2);
+}
+.tour-card h3 {
+  margin: 0 0 var(--space-2);
+  font-style: italic;
+  font-weight: 500;
+  font-size: var(--fs-lg);
+  color: var(--ink);
+}
+.tour-card p {
+  margin: 0;
+  color: var(--soft);
+  line-height: 1.55;
+  font-size: var(--fs-base);
+}
+.tour-actions {
+  margin-top: var(--space-4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.tour-nav { display: flex; gap: var(--space-2); }
+.tour-skip {
+  border: none;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-style: italic;
+  padding: var(--space-1) var(--space-2);
+}
+.tour-next {
+  background: var(--accent);
+  color: var(--paper);
+  border-color: var(--accent);
+  font-weight: 500;
+}
+.tour-next:hover { background: var(--ink); border-color: var(--ink); }
+.tour-highlight {
+  position: relative;
+  z-index: 201;
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+
+/* Day-column appointment markers under each day header */
+.day-appointments {
+  display: block;
+  font-size: var(--fs-xs);
+  font-style: italic;
+  font-variant: normal;
+  letter-spacing: 0;
+  color: var(--accent);
+  margin-top: 2px;
+  text-transform: none;
+  line-height: 1.2;
+}
+
 /* Header */
 .week-header {
   display: flex;

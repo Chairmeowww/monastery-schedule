@@ -8,6 +8,7 @@ type Props = {
   onSelectSister: (id: string | null) => void;
   onPrint: () => void;
   onResetWeek: () => void;
+  onShowTour: () => void;
 };
 
 export function SisterPalette({
@@ -17,6 +18,7 @@ export function SisterPalette({
   onSelectSister,
   onPrint,
   onResetWeek,
+  onShowTour,
 }: Props) {
   // Build per-sister stats
   const stats = roster.map((s) => {
@@ -55,6 +57,7 @@ export function SisterPalette({
       </p>
       <div className="palette-actions">
         <button onClick={onPrint}>Print schedule</button>
+        <button onClick={onShowTour}>Show tour</button>
         <button onClick={onResetWeek} title="Restore standing pattern for this week">
           Reset to standing pattern
         </button>

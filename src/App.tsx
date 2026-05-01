@@ -9,8 +9,10 @@ import { ContextStrip } from './components/ContextStrip';
 import { Grid } from './components/Grid';
 import { SisterPalette } from './components/SisterPalette';
 import { PrintFrame } from './components/PrintFrame';
+import { Tour } from './components/Tour';
 
 const STORAGE_PREFIX = 'monastery-schedule:week:';
+const TOUR_KEY = 'monastery-schedule:tour-seen';
 
 function readWeek(weekOf: string): Week {
   try {
@@ -36,6 +38,14 @@ export function App() {
     readWeek(initialWeekOf),
   );
   const [selectedSisterId, setSelectedSisterId] = useState<string | null>(null);
+  const [showTour, setShowTour] = useState<boolean>(() => {
+    try { return !localStorage.getItem(TOUR_KEY); } catch { return true; }
+  });
+  const closeTour = useCallback(() => {
+    try { localStorage.setItem(TOUR_KEY, '1'); } catch {}
+    setShowTour(false);
+  }, []);
+  const openTour = useCallback(() => setShowTour(true), []);
   const [notePrompt, setNotePrompt] = useState<
     | { kind: 'cell'; day: DayOfWeek; slot: Slot; current: string }
     | { kind: 'dismissal'; conflictKey: string; current: string }
@@ -172,6 +182,7 @@ export function App() {
           onSelectSister={setSelectedSisterId}
           onPrint={onPrint}
           onResetWeek={onResetWeek}
+          onShowTour={openTour}
         />
       </div>
 
@@ -197,6 +208,8 @@ export function App() {
       )}
 
       <PrintFrame week={week} rosterById={SISTER_BY_ID} />
+
+      {showTour && <Tour onClose={closeTour} />}
     </div>
   );
 }
