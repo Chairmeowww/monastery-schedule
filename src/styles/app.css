@@ -72,12 +72,22 @@
   font-weight: 500;
   transition: filter 140ms ease, border-color 140ms ease;
 }
-.tour-card .tour-next:hover { filter: brightness(0.9); }
-.tour-card .tour-next:active { filter: brightness(0.82); }
+.tour-card .tour-next:hover {
+  background: var(--ink) !important;
+  border-color: var(--ink) !important;
+}
 .tour-card .tour-next:focus { outline: none; }
 .tour-card .tour-next:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 2px;
+}
+/* Right after click: ignore the cursor's position so the button shows its
+   default state until the user moves the mouse, then hover resumes. */
+.tour-card .tour-next.just-advanced,
+.tour-card .tour-next.just-advanced:hover {
+  pointer-events: none;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
 }
 .tour-highlight {
   position: relative;

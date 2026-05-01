@@ -47,8 +47,14 @@ const STEPS: Step[] = [
 
 export function Tour({ onClose }: { onClose: () => void }) {
   const [step, setStep] = useState(0);
+  const [justAdvanced, setJustAdvanced] = useState(false);
   const cur = STEPS[step];
   const isLast = step === STEPS.length - 1;
+
+  const flagAdvance = () => {
+    setJustAdvanced(true);
+    window.setTimeout(() => setJustAdvanced(false), 350);
+  };
 
   useEffect(() => {
     if (!cur.target) return;
@@ -68,11 +74,15 @@ export function Tour({ onClose }: { onClose: () => void }) {
       if (e.key === 'ArrowRight' || e.key === 'Enter') {
         e.preventDefault();
         if (isLast) onClose();
-        else setStep((s) => s + 1);
+        else {
+          setStep((s) => s + 1);
+          flagAdvance();
+        }
       }
       if (e.key === 'ArrowLeft' && step > 0) {
         e.preventDefault();
         setStep((s) => s - 1);
+        flagAdvance();
       }
     };
     window.addEventListener('keydown', onKey);
@@ -97,6 +107,7 @@ export function Tour({ onClose }: { onClose: () => void }) {
               <button
                 onClick={(e) => {
                   setStep((s) => s - 1);
+                  flagAdvance();
                   (e.currentTarget as HTMLButtonElement).blur();
                 }}
               >
@@ -106,10 +117,13 @@ export function Tour({ onClose }: { onClose: () => void }) {
             <button
               onClick={(e) => {
                 if (isLast) onClose();
-                else setStep((s) => s + 1);
+                else {
+                  setStep((s) => s + 1);
+                  flagAdvance();
+                }
                 (e.currentTarget as HTMLButtonElement).blur();
               }}
-              className="tour-next"
+              className={`tour-next ${justAdvanced ? 'just-advanced' : ''}`}
             >
               {isLast ? 'Done' : 'Next'}
             </button>
