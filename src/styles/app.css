@@ -62,16 +62,18 @@
   font-style: italic;
   padding: var(--space-1) var(--space-2);
 }
-.tour-next {
-  background: var(--accent);
-  color: var(--paper);
-  border-color: var(--accent);
+.tour-next,
+.tour-card .tour-next:hover,
+.tour-card .tour-next:focus,
+.tour-card .tour-next:active {
+  background: var(--accent) !important;
+  color: var(--paper) !important;
+  border: 1px solid var(--accent) !important;
   font-weight: 500;
 }
 .tour-card .tour-next:hover {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper);
+  background: var(--ink) !important;
+  border-color: var(--ink) !important;
 }
 .tour-highlight {
   position: relative;
