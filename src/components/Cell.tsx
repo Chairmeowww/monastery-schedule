@@ -17,6 +17,7 @@ type Props = {
   onUnassign: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
   onDismissConflict: (key: string) => void;
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
+  onEmptyCellClick?: () => void;
 };
 
 export function Cell({
@@ -35,6 +36,7 @@ export function Cell({
   onUnassign,
   onDismissConflict,
   onCellNotePrompt,
+  onEmptyCellClick,
 }: Props) {
   const hasHard = conflicts.some((c) => c.severity === 'hard' && !dismissals[c.key]);
   const hasSoft =
@@ -53,9 +55,12 @@ export function Cell({
     .join(' ');
 
   const handleCellClick = (e: React.MouseEvent) => {
-    if (!selectedSisterId) return;
     const target = e.target as HTMLElement;
     if (target.closest('.chip') || target.closest('.conflict')) return;
+    if (!selectedSisterId) {
+      onEmptyCellClick?.();
+      return;
+    }
     if (sisterIds.includes(selectedSisterId)) {
       onUnassign(day, slot, selectedSisterId);
     } else {

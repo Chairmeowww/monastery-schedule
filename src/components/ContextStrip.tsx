@@ -43,6 +43,7 @@ export function ContextStrip({ week, roster, onUpdateWeek }: Props) {
     <div className="context-strip no-print">
       <div className="field">
         <span className="label">Day of solitude</span>
+        <span className="hint">the quiet day this week</span>
         <select
           value={week.daySolitude ?? ''}
           onChange={(e) => setSolitude(e.target.value as DayOfWeek | '')}
@@ -58,11 +59,13 @@ export function ContextStrip({ week, roster, onUpdateWeek }: Props) {
 
       <div className="field">
         <span className="label">Soup days</span>
+        <span className="hint">days soup is served at supper</span>
         <SoupDayPicker days={week.soupDays} onChange={setSoupDays} />
       </div>
 
       <div className="field">
         <span className="label">Appointments</span>
+        <span className="hint">doctor visits — clears that day’s duties</span>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
           {week.appointments.map((appt, i) => (
             <span

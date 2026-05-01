@@ -20,6 +20,7 @@ type Props = {
   onUnassign: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
   onDismissConflict: (key: string) => void;
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
+  onEmptyCellClick?: () => void;
 };
 
 function dayHumanShort(d: DayOfWeek, week: Week): string {
@@ -49,6 +50,7 @@ export function Grid({
   onUnassign,
   onDismissConflict,
   onCellNotePrompt,
+  onEmptyCellClick,
 }: Props) {
   const cellConflicts = (day: DayOfWeek, slot: Slot) =>
     conflicts.filter(
@@ -82,6 +84,7 @@ export function Grid({
           onUnassign={onUnassign}
           onDismissConflict={onDismissConflict}
           onCellNotePrompt={onCellNotePrompt}
+          onEmptyCellClick={onEmptyCellClick}
         />
       ))}
     </div>
@@ -98,6 +101,7 @@ function SlotRow({
   onUnassign,
   onDismissConflict,
   onCellNotePrompt,
+  onEmptyCellClick,
 }: {
   slot: Slot;
   week: Week;
@@ -108,6 +112,7 @@ function SlotRow({
   onUnassign: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
   onDismissConflict: (key: string) => void;
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
+  onEmptyCellClick?: () => void;
 }) {
   return (
     <>
@@ -131,6 +136,7 @@ function SlotRow({
             onUnassign={onUnassign}
             onDismissConflict={onDismissConflict}
             onCellNotePrompt={onCellNotePrompt}
+            onEmptyCellClick={onEmptyCellClick}
           />
         );
       })}

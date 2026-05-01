@@ -10,6 +10,7 @@ import { Grid } from './components/Grid';
 import { SisterPalette } from './components/SisterPalette';
 import { PrintFrame } from './components/PrintFrame';
 import { Tour } from './components/Tour';
+import { ConflictList } from './components/ConflictList';
 
 const STORAGE_PREFIX = 'monastery-schedule:week:';
 const TOUR_KEY = 'monastery-schedule:tour-seen';
@@ -46,6 +47,11 @@ export function App() {
     setShowTour(false);
   }, []);
   const openTour = useCallback(() => setShowTour(true), []);
+  const [hintMessage, setHintMessage] = useState<string | null>(null);
+  const flashHint = useCallback((msg: string) => {
+    setHintMessage(msg);
+    window.setTimeout(() => setHintMessage(null), 2800);
+  }, []);
   const [notePrompt, setNotePrompt] = useState<
     | { kind: 'cell'; day: DayOfWeek; slot: Slot; current: string }
     | { kind: 'dismissal'; conflictKey: string; current: string }
@@ -157,10 +163,26 @@ export function App() {
     });
   };
 
+  const dismissByKey = (key: string, note: string) => {
+    setWeek((w) => ({ ...w, dismissals: { ...w.dismissals, [key]: note } }));
+  };
+  const undismissByKey = (key: string) => {
+    setWeek((w) => {
+      const { [key]: _, ...rest } = w.dismissals;
+      return { ...w, dismissals: rest };
+    });
+  };
+
   return (
     <div className="app">
       <WeekHeader week={week} conflicts={conflicts} onWeekOfChange={switchToWeek} />
       <ContextStrip week={week} roster={ROSTER} onUpdateWeek={(w) => setWeek(w)} />
+      <ConflictList
+        conflicts={conflicts}
+        week={week}
+        onDismiss={dismissByKey}
+        onUndismiss={undismissByKey}
+      />
       <div className="layout no-print">
         <Grid
           week={week}
@@ -174,6 +196,7 @@ export function App() {
           onUnassign={onUnassign}
           onDismissConflict={onDismissConflict}
           onCellNotePrompt={onCellNotePrompt}
+          onEmptyCellClick={() => flashHint('Pick a sister on the right, then click a cell.')}
         />
         <SisterPalette
           roster={ROSTER}
@@ -191,6 +214,10 @@ export function App() {
           Placing <em>{SISTER_BY_ID[selectedSisterId]?.name}</em> — click a cell.
           <button onClick={() => setSelectedSisterId(null)}>Cancel</button>
         </div>
+      )}
+
+      {!selectedSisterId && hintMessage && (
+        <div className="selection-toast no-print">{hintMessage}</div>
       )}
 
       {notePrompt && (

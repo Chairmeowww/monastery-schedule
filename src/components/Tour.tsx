@@ -80,7 +80,7 @@ export function Tour({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="tour no-print">
-      <div className="tour-backdrop" onClick={onClose} />
+      <div className="tour-backdrop" />
       <div className="tour-card" role="dialog" aria-label={`Tour step ${step + 1}: ${cur.title}`}>
         <div className="tour-step-num">
           Step {step + 1} of {STEPS.length}
