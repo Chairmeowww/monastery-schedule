@@ -68,7 +68,11 @@
   border-color: var(--accent);
   font-weight: 500;
 }
-.tour-next:hover { background: var(--ink); border-color: var(--ink); }
+.tour-card .tour-next:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
 .tour-highlight {
   position: relative;
   z-index: 9999;
