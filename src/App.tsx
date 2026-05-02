@@ -26,20 +26,19 @@ const TOUR_KEY = 'monastery-schedule:tour-seen';
 const CLEAR_ALL_NOTE = 'Cleared by user';
 
 /**
- * When the user touches a cell after Clear all, drop any auto-dismissals for that
- * cell so newly-violated rules surface again. Cell-keyed conflicts use the pattern
- * `RULE::day::slot[::suffix]`. Manual dismissals (with custom notes) are preserved.
+ * Once the user starts scheduling (any assign or unassign), drop every auto-dismissal
+ * from a previous Clear all so the system re-checks the whole week. Manual dismissals
+ * (custom notes) are preserved. Earlier we did this only for the touched cell, but that
+ * left rule violations silent on cells the user hadn't touched yet — confusing.
  */
 function dropClearAllDismissals(
   dismissals: Record<string, string>,
-  day: string,
-  slot: string,
+  _day: string,
+  _slot: string,
 ): Record<string, string> {
-  const cellMarker = `::${day}::${slot}`;
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(dismissals)) {
-    const isCellDismissal = k.includes(`${cellMarker}::`) || k.endsWith(cellMarker);
-    if (isCellDismissal && v === CLEAR_ALL_NOTE) continue;
+    if (v === CLEAR_ALL_NOTE) continue;
     out[k] = v;
   }
   return out;

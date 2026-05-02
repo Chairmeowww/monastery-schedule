@@ -373,10 +373,13 @@ export function R16_annetteIroning(week: Week): Conflict[] {
   return [];
 }
 
-/** R17. Shipping must be filled every weekday Mon–Thu by primary or backup shipper. */
+/** R17. Shipping Mon–Thu: primary shippers are silent, backups soft-warn (emergency only),
+ *  anyone else is hard-flagged.
+ */
 export function R17_shipping(week: Week): Conflict[] {
   const c: Conflict[] = [];
-  const valid = new Set([...SHIPPING_PRIMARY, ...SHIPPING_BACKUP]);
+  const primary = new Set(SHIPPING_PRIMARY);
+  const backup = new Set(SHIPPING_BACKUP);
   for (const day of ['mon', 'tue', 'wed', 'thu'] as DayOfWeek[]) {
     const ids = sistersInSlot(week, day, 'shipping');
     if (ids.length === 0) {
@@ -390,15 +393,24 @@ export function R17_shipping(week: Week): Conflict[] {
       continue;
     }
     for (const id of ids) {
-      if (!valid.has(id)) {
+      if (primary.has(id)) continue;
+      if (backup.has(id)) {
         c.push({
           rule: 'R17',
-          severity: 'hard',
-          message: `${NAME(id)} doesn't do shipping.`,
+          severity: 'soft',
+          message: `${NAME(id)} is a backup shipper — usually only in an emergency.`,
           scope: { kind: 'cell', day, slot: 'shipping' },
-          key: cellKey(day, 'shipping', 'R17', id),
+          key: cellKey(day, 'shipping', 'R17', `backup-${id}`),
         });
+        continue;
       }
+      c.push({
+        rule: 'R17',
+        severity: 'hard',
+        message: `${NAME(id)} doesn't do shipping.`,
+        scope: { kind: 'cell', day, slot: 'shipping' },
+        key: cellKey(day, 'shipping', 'R17', id),
+      });
     }
   }
   return c;
