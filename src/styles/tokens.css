@@ -17,6 +17,8 @@
   --chip-muted: #6E655A;
   --chip-accent: #9C8A5C;
   --chip-accent-soft: #BFAE83;
+  /* Grid lines: a much paler chip-tone so the schedule reads as a page, not a spreadsheet. */
+  --grid-line: #EFE9DC;
 
   /* Validation signal colors — kept warm enough to read instantly against the cool chrome. */
   --soft-red: #B86A5E;

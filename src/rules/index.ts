@@ -351,7 +351,9 @@ export function R14_angelaJonahMonday(week: Week): Conflict[] {
   return c;
 }
 
-/** R15. Angela Jonah does at least one additional laundry period beyond Monday. */
+/** R15. Angela Jonah does at least one additional laundry period beyond Monday.
+ *  Soft: it's a TODO reminder, not a wrong-thing-assigned mistake.
+ */
 export function R15_angelaJonahLaundry(week: Week): Conflict[] {
   const laundry = week.assignments.filter(
     (a) => a.slot === 'laundry' && a.sisterIds.includes('angela_jonah'),
@@ -360,7 +362,7 @@ export function R15_angelaJonahLaundry(week: Week): Conflict[] {
     return [
       {
         rule: 'R15',
-        severity: 'hard',
+        severity: 'soft',
         message: 'Angela Jonah needs at least one more laundry period beyond Monday.',
         scope: { kind: 'sister', sisterId: 'angela_jonah' },
         key: 'R15::aj-laundry',
@@ -404,8 +406,8 @@ export function R17_shipping(week: Week): Conflict[] {
     if (ids.length === 0) {
       c.push({
         rule: 'R17',
-        severity: 'hard',
-        message: 'Shipping must be assigned today.',
+        severity: 'soft',
+        message: 'Shipping still needs to be assigned.',
         scope: { kind: 'cell', day, slot: 'shipping' },
         key: cellKey(day, 'shipping', 'R17', 'empty'),
       });
@@ -444,8 +446,8 @@ export function R18_honey(week: Week): Conflict[] {
   if (honey.length === 0) {
     c.push({
       rule: 'R18',
-      severity: 'hard',
-      message: 'Honey is assigned at least once a week.',
+      severity: 'soft',
+      message: 'Honey still needs to be scheduled this week.',
       scope: { kind: 'week' },
       key: 'R18::missing',
     });
@@ -547,7 +549,7 @@ export function R19_garden(week: Week): Conflict[] {
   if (am < 3) {
     c.push({
       rule: 'R19',
-      severity: 'hard',
+      severity: 'soft',
       message: `Ann Marie usually gardens 3× a week in season (currently ${am}).`,
       scope: { kind: 'sister', sisterId: 'ann_marie' },
       key: 'R19::am',

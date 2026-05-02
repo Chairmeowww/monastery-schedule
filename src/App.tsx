@@ -26,19 +26,25 @@ const TOUR_KEY = 'monastery-schedule:tour-seen';
 const CLEAR_ALL_NOTE = 'Cleared by user';
 
 /**
- * Once the user starts scheduling (any assign or unassign), drop every auto-dismissal
- * from a previous Clear all so the system re-checks the whole week. Manual dismissals
- * (custom notes) are preserved. Earlier we did this only for the touched cell, but that
- * left rule violations silent on cells the user hadn't touched yet — confusing.
+ * When the user touches a cell after Clear all, wake up dismissed warnings for the
+ * SLOT she touched (across all days). E.g. touching Mon shipping wakes Tue/Wed/Thu
+ * shipping warnings too — but touching Eucharist doesn't disturb shipping/laundry.
+ * Manual dismissals (custom notes) are preserved.
  */
 function dropClearAllDismissals(
   dismissals: Record<string, string>,
   _day: string,
-  _slot: string,
+  slot: string,
 ): Record<string, string> {
+  const slotMarker = `::${slot}`;
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(dismissals)) {
-    if (v === CLEAR_ALL_NOTE) continue;
+    if (v !== CLEAR_ALL_NOTE) {
+      out[k] = v;
+      continue;
+    }
+    const matchesSlot = k.includes(`${slotMarker}::`) || k.endsWith(slotMarker);
+    if (matchesSlot) continue;
     out[k] = v;
   }
   return out;
