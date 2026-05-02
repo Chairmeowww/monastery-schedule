@@ -1,5 +1,7 @@
 import {
   DAYS,
+  SLOT_LABEL,
+  type Ability,
   type Assignment,
   type Conflict,
   type DayOfWeek,
@@ -644,6 +646,60 @@ export function R21_appointmentClearsDay(week: Week): Conflict[] {
   return c;
 }
 
+/** R24. Generic ability check — a sister assigned to a duty must actually be able to do it.
+ *  Catches things like Gertrude on laundry (only Angela Jonah does laundry), or Kathy on
+ *  cooking (Kathy only drives). Slots already validated by stricter rules are skipped:
+ *  eucharist (R12), shipping (R17), honey (R18). Driver is handled with a small twist
+ *  because Angela Jonah is a backup driver despite not having the driver ability.
+ */
+const SLOT_REQUIRES_ABILITY: Partial<Record<Slot, Ability>> = {
+  dinner: 'dinner_cook',
+  supper: 'supper_cook',
+  table: 'table_server',
+  laundry: 'laundry',
+  ironing: 'ironing',
+  garden: 'garden',
+};
+
+export function R24_abilityCheck(week: Week): Conflict[] {
+  const c: Conflict[] = [];
+  for (const a of week.assignments) {
+    const required = SLOT_REQUIRES_ABILITY[a.slot];
+    if (required) {
+      for (const id of a.sisterIds) {
+        const sister = SISTER_BY_ID[id];
+        if (!sister) continue;
+        if (!sister.abilities.includes(required)) {
+          c.push({
+            rule: 'R24',
+            severity: 'hard',
+            message: `${NAME(id)} doesn't typically do ${SLOT_LABEL[a.slot].toLowerCase()}.`,
+            scope: { kind: 'cell', day: a.day, slot: a.slot },
+            key: cellKey(a.day, a.slot, 'R24', id),
+          });
+        }
+      }
+    }
+    if (a.slot === 'driver') {
+      for (const id of a.sisterIds) {
+        const sister = SISTER_BY_ID[id];
+        if (!sister) continue;
+        const isDriver = sister.abilities.includes('driver') || BACKUP_DRIVERS.includes(id);
+        if (!isDriver) {
+          c.push({
+            rule: 'R24',
+            severity: 'hard',
+            message: `${NAME(id)} doesn't drive.`,
+            scope: { kind: 'cell', day: a.day, slot: 'driver' },
+            key: cellKey(a.day, 'driver', 'R24', id),
+          });
+        }
+      }
+    }
+  }
+  return c;
+}
+
 /** R23. Cook on community day of solitude is also that day's table server.
  *  Soft-warn if the dinner cook on DoS isn't on the table for that day too.
  */
@@ -737,6 +793,7 @@ export const ALL_RULES = [
   R21_appointmentClearsDay,
   R22_sameDayDouble,
   R23_dosCookAlsoTable,
+  R24_abilityCheck,
 ];
 
 export function validateWeek(week: Week, _roster?: Sister[]): ValidationResult {
