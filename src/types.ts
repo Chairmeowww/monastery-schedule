@@ -84,11 +84,16 @@ export type Sister = {
   isManager?: boolean;
 };
 
+export type HoneyJob = 'Mix' | 'Fill' | 'Labels' | 'Lids';
+export const HONEY_JOBS: HoneyJob[] = ['Mix', 'Fill', 'Labels', 'Lids'];
+
 export type Assignment = {
   day: DayOfWeek;
   slot: Slot;
   sisterIds: string[];
   note?: string;
+  /** For honey cells only. Tells the rules engine which honey job is being done so it can validate per-role. */
+  honeyJob?: HoneyJob;
 };
 
 export type Appointment = {

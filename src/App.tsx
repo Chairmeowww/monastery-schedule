@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import type { DayOfWeek, Slot, Week } from './types';
+import type { DayOfWeek, HoneyJob, Slot, Week } from './types';
 import { ROSTER, SISTER_BY_ID } from './data/roster';
-import { freshWeek, mondayOf, defaultAssignments } from './data/defaults';
+import {
+  freshWeek,
+  mondayOf,
+  defaultAssignments,
+  defaultSoupDays,
+  emptyWeek,
+  saveStandingPattern,
+  loadStandingPattern,
+} from './data/defaults';
 import { validateWeek } from './rules';
 import { useUndoable } from './hooks/useUndoable';
 import { WeekHeader } from './components/WeekHeader';
@@ -14,6 +22,28 @@ import { ConflictList } from './components/ConflictList';
 
 const STORAGE_PREFIX = 'monastery-schedule:week:';
 const TOUR_KEY = 'monastery-schedule:tour-seen';
+
+const CLEAR_ALL_NOTE = 'Cleared by user';
+
+/**
+ * When the user touches a cell after Clear all, drop any auto-dismissals for that
+ * cell so newly-violated rules surface again. Cell-keyed conflicts use the pattern
+ * `RULE::day::slot[::suffix]`. Manual dismissals (with custom notes) are preserved.
+ */
+function dropClearAllDismissals(
+  dismissals: Record<string, string>,
+  day: string,
+  slot: string,
+): Record<string, string> {
+  const cellMarker = `::${day}::${slot}`;
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(dismissals)) {
+    const isCellDismissal = k.includes(`${cellMarker}::`) || k.endsWith(cellMarker);
+    if (isCellDismissal && v === CLEAR_ALL_NOTE) continue;
+    out[k] = v;
+  }
+  return out;
+}
 
 function readWeek(weekOf: string): Week {
   try {
@@ -82,7 +112,20 @@ export function App() {
             a === existing ? { ...a, sisterIds: [...a.sisterIds, sisterId] } : a,
           )
         : [...w.assignments, { day, slot, sisterIds: [sisterId] }];
-      return { ...w, assignments: next };
+      return { ...w, assignments: next, dismissals: dropClearAllDismissals(w.dismissals, day, slot) };
+    });
+  };
+
+  const onSetHoneyJob = (day: DayOfWeek, job: HoneyJob | null) => {
+    setWeek((w) => {
+      const existing = w.assignments.find((a) => a.day === day && a.slot === 'honey');
+      if (!existing) return w;
+      const updated = { ...existing, honeyJob: job ?? undefined };
+      return {
+        ...w,
+        assignments: w.assignments.map((a) => (a === existing ? updated : a)),
+        dismissals: dropClearAllDismissals(w.dismissals, day, 'honey'),
+      };
     });
   };
 
@@ -95,7 +138,7 @@ export function App() {
             : a,
         )
         .filter((a) => a.sisterIds.length > 0 || a.note);
-      return { ...w, assignments: next };
+      return { ...w, assignments: next, dismissals: dropClearAllDismissals(w.dismissals, day, slot) };
     });
   };
 
@@ -154,13 +197,49 @@ export function App() {
     window.print();
   };
 
+  const [standingSavedAt, setStandingSavedAt] = useState<string | null>(
+    () => loadStandingPattern()?.savedAt ?? null,
+  );
+
   const onResetWeek = () => {
     if (!confirm('Reset this week to the standing pattern? Your dismissed conflicts and notes will be cleared.')) return;
     setWeek({
       ...week,
       assignments: defaultAssignments(),
+      soupDays: defaultSoupDays(),
       dismissals: {},
     });
+  };
+
+  const onSetAsDefault = () => {
+    if (
+      !confirm(
+        "Save this week's pattern as the new standing pattern? It will be used to pre-fill every new week from now on.",
+      )
+    ) {
+      return;
+    }
+    saveStandingPattern(week.assignments, week.soupDays);
+    setStandingSavedAt(loadStandingPattern()?.savedAt ?? null);
+  };
+
+  const onClearWeek = () => {
+    if (
+      !confirm(
+        'Clear every assignment in this week? This cannot be undone except by Reset to default. Appointments and solitude entries will also be removed.',
+      )
+    ) {
+      return;
+    }
+    const blank = emptyWeek(week.weekOf);
+    // Suppress every "missing assignment" warning that the cleared state would surface —
+    // she just told us she wants a blank canvas. As she fills cells, these dismissals
+    // either become irrelevant (the conflict goes away) or stay quietly suppressed.
+    const presetDismissals: Record<string, string> = {};
+    for (const c of validateWeek(blank, ROSTER).conflicts) {
+      presetDismissals[c.key] = CLEAR_ALL_NOTE;
+    }
+    setWeek({ ...blank, dismissals: presetDismissals });
   };
 
   const dismissByKey = (key: string, note: string) => {
@@ -196,6 +275,7 @@ export function App() {
           onUnassign={onUnassign}
           onDismissConflict={onDismissConflict}
           onCellNotePrompt={onCellNotePrompt}
+          onSetHoneyJob={onSetHoneyJob}
           onEmptyCellClick={() => flashHint('Pick a sister on the right, then click a cell.')}
         />
         <SisterPalette
@@ -205,7 +285,10 @@ export function App() {
           onSelectSister={setSelectedSisterId}
           onPrint={onPrint}
           onResetWeek={onResetWeek}
+          onSetAsDefault={onSetAsDefault}
+          onClearWeek={onClearWeek}
           onShowTour={openTour}
+          standingSavedAt={standingSavedAt}
         />
       </div>
 

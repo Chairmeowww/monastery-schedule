@@ -204,11 +204,10 @@ export function R9_soupDayPreferred(week: Week): Conflict[] {
   return c;
 }
 
-/** R10. On non-Sunday soup days, soup-supper cook must be in the soup-makers set. */
+/** R10. On every soup day, the supper cook must be in the soup-makers set. */
 export function R10_soupMaker(week: Week): Conflict[] {
   const c: Conflict[] = [];
   for (const day of week.soupDays) {
-    if (day === 'sun') continue;
     const supperCooks = sistersInSlot(week, day, 'supper');
     if (supperCooks.length === 0) continue; // R8 / cell-empty handles this
     for (const id of supperCooks) {
@@ -405,7 +404,7 @@ export function R17_shipping(week: Week): Conflict[] {
   return c;
 }
 
-/** R18. Honey rules — at least once/week (HARD); roles by ability; soft warns for prefs. */
+/** R18. Honey rules — at least once/week (HARD); per-job role validation when the cell's honeyJob is set. */
 export function R18_honey(week: Week): Conflict[] {
   const c: Conflict[] = [];
   const honey = week.assignments.filter((a) => a.slot === 'honey');
@@ -418,10 +417,11 @@ export function R18_honey(week: Week): Conflict[] {
       key: 'R18::missing',
     });
   }
-  // Per-cell role validation if a note marks the honey job.
-  // Phase 1: when no role marker, allow any of HONEY_FILL/MIX/LABELS/LIDS — flag emergency-only and soft prefs.
+
   for (const a of honey) {
-    for (const id of a.sisterIds) {
+    // If no honey job is picked, fall back to "is this person on the honey crew at all" check
+    // and a soft nudge to pick a job so we can validate properly.
+    if (!a.honeyJob) {
       const allValid = [
         ...HONEY_MIX_ONLY,
         ...HONEY_FILL,
@@ -429,32 +429,64 @@ export function R18_honey(week: Week): Conflict[] {
         ...HONEY_LIDS,
         ...HONEY_FILL_EMERGENCY,
       ];
-      if (!allValid.includes(id)) {
+      for (const id of a.sisterIds) {
+        if (!allValid.includes(id)) {
+          c.push({
+            rule: 'R18',
+            severity: 'hard',
+            message: `${NAME(id)} isn't on the honey crew.`,
+            scope: { kind: 'cell', day: a.day, slot: 'honey' },
+            key: cellKey(a.day, 'honey', 'R18', `bad-${id}`),
+          });
+        }
+      }
+      if (a.sisterIds.length > 0) {
+        c.push({
+          rule: 'R18',
+          severity: 'soft',
+          message: 'Pick which honey job (Mix / Fill / Labels / Lids) so it can be validated.',
+          scope: { kind: 'cell', day: a.day, slot: 'honey' },
+          key: cellKey(a.day, 'honey', 'R18', 'job-unset'),
+        });
+      }
+      continue;
+    }
+
+    // honeyJob is set — validate each sister against that job's ability list.
+    const job = a.honeyJob;
+    const allowedForJob: Record<typeof job, string[]> = {
+      Mix: HONEY_MIX_ONLY,
+      Fill: [...HONEY_FILL, ...HONEY_FILL_EMERGENCY],
+      Labels: HONEY_LABELS,
+      Lids: HONEY_LIDS,
+    };
+    for (const id of a.sisterIds) {
+      if (!allowedForJob[job].includes(id)) {
         c.push({
           rule: 'R18',
           severity: 'hard',
-          message: `${NAME(id)} isn't on the honey crew.`,
+          message: `${NAME(id)} doesn't do honey ${job.toLowerCase()}.`,
           scope: { kind: 'cell', day: a.day, slot: 'honey' },
-          key: cellKey(a.day, 'honey', 'R18', `bad-${id}`),
+          key: cellKey(a.day, 'honey', 'R18', `bad-${job}-${id}`),
         });
         continue;
       }
-      if (id === 'karen') {
+      if (job === 'Fill' && id === 'karen') {
         c.push({
           rule: 'R18',
           severity: 'soft',
-          message: 'Karen prefers not to fill honey jars (other honey roles fine).',
+          message: 'Karen prefers not to fill honey jars.',
           scope: { kind: 'cell', day: a.day, slot: 'honey' },
-          key: cellKey(a.day, 'honey', 'R18', 'karen-pref'),
+          key: cellKey(a.day, 'honey', 'R18', 'karen-fill-pref'),
         });
       }
-      if (id === 'claire') {
+      if (job === 'Fill' && id === 'claire') {
         c.push({
           rule: 'R18',
           severity: 'soft',
-          message: 'Claire on honey is for emergencies only.',
+          message: 'Claire fills honey only in an emergency.',
           scope: { kind: 'cell', day: a.day, slot: 'honey' },
-          key: cellKey(a.day, 'honey', 'R18', 'claire-emergency'),
+          key: cellKey(a.day, 'honey', 'R18', 'claire-fill-emergency'),
         });
       }
     }

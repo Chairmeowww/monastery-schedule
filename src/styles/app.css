@@ -452,6 +452,73 @@
 .palette button {
   font-size: var(--fs-sm);
 }
+.palette .standing-meta {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Honey job picker (cell-level) */
+.honey-job {
+  position: relative;
+  margin-top: 4px;
+}
+.honey-job-trigger {
+  font-size: var(--fs-xs);
+  padding: 2px 8px;
+  border: 1px dotted var(--hair-light);
+  background: transparent;
+  color: var(--muted);
+  font-style: italic;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.honey-job-trigger.set {
+  color: var(--ink);
+  border-style: solid;
+  font-style: normal;
+}
+.honey-job-trigger:hover {
+  background: var(--paper);
+}
+.honey-job-picker {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--paper);
+  border: 1px solid var(--hair);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+.honey-job-picker button {
+  font-size: var(--fs-xs);
+  padding: 4px 12px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 3px;
+}
+.honey-job-picker button:hover {
+  background: var(--hair-light);
+}
+.honey-job-picker button.selected {
+  background: var(--accent, #d8c89a);
+  font-weight: 500;
+}
+.honey-job-picker button.clear {
+  border-top: 1px dotted var(--hair-light);
+  margin-top: 2px;
+  color: var(--muted);
+  font-style: italic;
+}
 
 /* Selection toast */
 .selection-toast {

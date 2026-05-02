@@ -82,6 +82,11 @@ function PrintRow({
                 {ids.map((id) => rosterById[id]?.name ?? id).join(' · ')}
               </span>
             )}
+            {a?.honeyJob && (
+              <span style={{ fontSize: '8pt', color: 'var(--muted)', display: 'block' }}>
+                {a.honeyJob}
+              </span>
+            )}
             {a?.note && (
               <span style={{ fontSize: '8pt', color: 'var(--muted)', display: 'block' }}>
                 {a.note}

@@ -1,8 +1,9 @@
 import type { Assignment, DayOfWeek, Week } from '../types';
 
 /**
- * Standing pattern for table service. Used as a pre-fill when starting a new week.
- * Wed alternates Victoria / Karen — defaults to Victoria; user adjusts.
+ * Seed table-service rotation. Used as the fallback standing pattern when the
+ * user has never saved one. Wed alternates Victoria / Karen — defaults to
+ * Victoria; user adjusts.
  */
 export const TABLE_STANDING: Record<DayOfWeek, string> = {
   mon: 'suz',
@@ -15,10 +16,9 @@ export const TABLE_STANDING: Record<DayOfWeek, string> = {
 };
 
 /**
- * Shipping pre-fill primary rotation Mon–Thu.
- * Rotation chosen to avoid clashing with table-service standing on the same day:
- *   Tue → Karen (Gertrude is on table); Wed → Gertrude (Karen would dodge but
- *   Gertrude is free Wed); Mon/Thu → Claire (Suz is on table).
+ * Seed shipping rotation Mon–Thu, chosen to avoid clashing with table-service
+ * standing on the same day: Tue → Karen (Gertrude is on table); Wed → Gertrude;
+ * Mon/Thu → Claire (Suz is on table).
  */
 export const SHIPPING_STANDING: Partial<Record<DayOfWeek, string>> = {
   mon: 'claire',
@@ -27,11 +27,11 @@ export const SHIPPING_STANDING: Partial<Record<DayOfWeek, string>> = {
   thu: 'claire',
 };
 
-/** Default soup days per R9 (Mon, Wed). */
-export const DEFAULT_SOUP_DAYS: DayOfWeek[] = ['mon', 'wed'];
+/** Seed soup days. Mon/Wed per R9; Sun because Sunday supper or lunch always has soup. */
+export const SEED_SOUP_DAYS: DayOfWeek[] = ['mon', 'wed', 'sun'];
 
-/** Build the pre-filled assignments for a fresh week. */
-export function defaultAssignments(): Assignment[] {
+/** Hardcoded seed assignments — used when the user has not saved a standing pattern. */
+function seedAssignments(): Assignment[] {
   const a: Assignment[] = [];
   (Object.keys(TABLE_STANDING) as DayOfWeek[]).forEach((day) => {
     a.push({ day, slot: 'table', sisterIds: [TABLE_STANDING[day]] });
@@ -45,6 +45,64 @@ export function defaultAssignments(): Assignment[] {
   return a;
 }
 
+const STANDING_KEY = 'monastery-schedule:standing-pattern';
+
+export type StandingPattern = {
+  assignments: Assignment[];
+  soupDays: DayOfWeek[];
+  savedAt: string; // ISO timestamp
+};
+
+/** Read the user-saved standing pattern, or null if none has been saved. */
+export function loadStandingPattern(): StandingPattern | null {
+  try {
+    const raw = localStorage.getItem(STANDING_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StandingPattern;
+    if (!parsed?.assignments || !parsed?.soupDays) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+/** Persist the given assignments + soupDays as the new standing pattern. */
+export function saveStandingPattern(assignments: Assignment[], soupDays: DayOfWeek[]): void {
+  try {
+    const pattern: StandingPattern = {
+      assignments: assignments.map((a) => ({ ...a, sisterIds: [...a.sisterIds] })),
+      soupDays: [...soupDays],
+      savedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(STANDING_KEY, JSON.stringify(pattern));
+  } catch {
+    // storage unavailable — silent fail
+  }
+}
+
+/** Forget the user-saved standing pattern; future resets fall back to the seed. */
+export function clearStandingPattern(): void {
+  try {
+    localStorage.removeItem(STANDING_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+/** Pre-filled assignments for a fresh week — user-saved pattern, or seed fallback. */
+export function defaultAssignments(): Assignment[] {
+  const saved = loadStandingPattern();
+  if (saved) return saved.assignments.map((a) => ({ ...a, sisterIds: [...a.sisterIds] }));
+  return seedAssignments();
+}
+
+/** Default soup days for a fresh week — user-saved pattern, or seed fallback. */
+export function defaultSoupDays(): DayOfWeek[] {
+  const saved = loadStandingPattern();
+  if (saved) return [...saved.soupDays];
+  return [...SEED_SOUP_DAYS];
+}
+
 export function freshWeek(weekOf: string): Week {
   return {
     weekOf,
@@ -52,7 +110,19 @@ export function freshWeek(weekOf: string): Week {
     appointments: [],
     assignments: defaultAssignments(),
     dismissals: {},
-    soupDays: [...DEFAULT_SOUP_DAYS],
+    soupDays: defaultSoupDays(),
+  };
+}
+
+/** Empty week — used by the "Clear all" action. */
+export function emptyWeek(weekOf: string): Week {
+  return {
+    weekOf,
+    privateSolitude: [],
+    appointments: [],
+    assignments: [],
+    dismissals: {},
+    soupDays: [],
   };
 }
 

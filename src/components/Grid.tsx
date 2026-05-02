@@ -5,6 +5,7 @@ import {
   SLOT_LABEL,
   type Conflict,
   type DayOfWeek,
+  type HoneyJob,
   type Sister,
   type Slot,
   type Week,
@@ -20,6 +21,7 @@ type Props = {
   onUnassign: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
   onDismissConflict: (key: string) => void;
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
+  onSetHoneyJob: (day: DayOfWeek, job: HoneyJob | null) => void;
   onEmptyCellClick?: () => void;
 };
 
@@ -50,6 +52,7 @@ export function Grid({
   onUnassign,
   onDismissConflict,
   onCellNotePrompt,
+  onSetHoneyJob,
   onEmptyCellClick,
 }: Props) {
   const cellConflicts = (day: DayOfWeek, slot: Slot) =>
@@ -84,6 +87,7 @@ export function Grid({
           onUnassign={onUnassign}
           onDismissConflict={onDismissConflict}
           onCellNotePrompt={onCellNotePrompt}
+          onSetHoneyJob={onSetHoneyJob}
           onEmptyCellClick={onEmptyCellClick}
         />
       ))}
@@ -101,6 +105,7 @@ function SlotRow({
   onUnassign,
   onDismissConflict,
   onCellNotePrompt,
+  onSetHoneyJob,
   onEmptyCellClick,
 }: {
   slot: Slot;
@@ -112,6 +117,7 @@ function SlotRow({
   onUnassign: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
   onDismissConflict: (key: string) => void;
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
+  onSetHoneyJob: (day: DayOfWeek, job: HoneyJob | null) => void;
   onEmptyCellClick?: () => void;
 }) {
   return (
@@ -126,6 +132,7 @@ function SlotRow({
             slot={slot}
             sisterIds={a?.sisterIds ?? []}
             note={a?.note}
+            honeyJob={a?.honeyJob}
             conflicts={cellConflicts(day, slot)}
             dismissals={week.dismissals}
             rosterById={rosterById}
@@ -136,6 +143,7 @@ function SlotRow({
             onUnassign={onUnassign}
             onDismissConflict={onDismissConflict}
             onCellNotePrompt={onCellNotePrompt}
+            onSetHoneyJob={onSetHoneyJob}
             onEmptyCellClick={onEmptyCellClick}
           />
         );

@@ -8,7 +8,11 @@ type Props = {
   onSelectSister: (id: string | null) => void;
   onPrint: () => void;
   onResetWeek: () => void;
+  onSetAsDefault: () => void;
+  onClearWeek: () => void;
   onShowTour: () => void;
+  /** ISO timestamp of the most recent "Set as default", or null if never customized. */
+  standingSavedAt: string | null;
 };
 
 export function SisterPalette({
@@ -18,7 +22,10 @@ export function SisterPalette({
   onSelectSister,
   onPrint,
   onResetWeek,
+  onSetAsDefault,
+  onClearWeek,
   onShowTour,
+  standingSavedAt,
 }: Props) {
   // Build per-sister stats
   const stats = roster.map((s) => {
@@ -58,10 +65,31 @@ export function SisterPalette({
       <div className="palette-actions">
         <button onClick={onPrint}>Print schedule</button>
         <button onClick={onShowTour}>Show tour</button>
-        <button onClick={onResetWeek} title="Restore standing pattern for this week">
-          Reset to standing pattern
+        <button onClick={onResetWeek} title="Restore the saved standing pattern for this week">
+          Reset to default
         </button>
+        <button
+          onClick={onSetAsDefault}
+          title="Save this week's pattern as the standing pattern for all new weeks"
+        >
+          Set as default
+        </button>
+        <button onClick={onClearWeek} title="Empty every cell in this week">
+          Clear all
+        </button>
+        {standingSavedAt && (
+          <p className="standing-meta">Standing pattern saved {formatSavedAt(standingSavedAt)}</p>
+        )}
       </div>
     </aside>
   );
+}
+
+function formatSavedAt(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch {
+    return iso;
+  }
 }
