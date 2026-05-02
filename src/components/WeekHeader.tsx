@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import type { Conflict, Week } from '../types';
 import { fromISODate } from '../data/defaults';
 
@@ -16,16 +17,34 @@ export function WeekHeader({ week, conflicts, onWeekOfChange }: Props) {
   const visible = conflicts.filter((c) => !week.dismissals[c.key]);
   const hard = visible.filter((c) => c.severity === 'hard').length;
   const soft = visible.filter((c) => c.severity === 'soft').length;
+  const isClear = hard === 0 && soft === 0;
 
-  let summaryText = 'Schedule is clear.';
-  let summaryClass = 'clear';
+  // "Schedule is clear" is a transient acknowledgment — show only when the user
+  // crosses from has-warnings to clear, then fade after a few seconds. Initial
+  // page-load with a clear schedule shows nothing (the absence of counts is the cue).
+  const [showClearPill, setShowClearPill] = useState(false);
+  const prevIsClear = useRef(isClear);
+  useEffect(() => {
+    if (isClear && !prevIsClear.current) {
+      setShowClearPill(true);
+      const t = window.setTimeout(() => setShowClearPill(false), 2500);
+      return () => window.clearTimeout(t);
+    }
+    if (!isClear) setShowClearPill(false);
+    prevIsClear.current = isClear;
+  }, [isClear]);
+
+  let summaryText: string | null = null;
+  let summaryClass = '';
   if (hard > 0) {
     summaryText = `${hard} conflict${hard === 1 ? '' : 's'}`;
     if (soft > 0) summaryText += ` · ${soft} soft warning${soft === 1 ? '' : 's'}`;
     summaryClass = 'has-issues';
   } else if (soft > 0) {
     summaryText = `${soft} soft warning${soft === 1 ? '' : 's'}`;
-    summaryClass = '';
+  } else if (showClearPill) {
+    summaryText = 'Schedule is clear.';
+    summaryClass = 'clear fading';
   }
 
   return (
@@ -40,7 +59,7 @@ export function WeekHeader({ week, conflicts, onWeekOfChange }: Props) {
           value={week.weekOf}
           onChange={(e) => onWeekOfChange(e.target.value)}
         />
-        <span className={`conflict-summary ${summaryClass}`}>{summaryText}</span>
+        {summaryText && <span className={`conflict-summary ${summaryClass}`}>{summaryText}</span>}
       </div>
     </header>
   );

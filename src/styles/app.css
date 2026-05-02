@@ -237,6 +237,15 @@
   background: var(--soft-green-bg);
   color: var(--soft-green);
 }
+.conflict-summary.fading {
+  animation: conflict-summary-fade 2.5s ease forwards;
+}
+@keyframes conflict-summary-fade {
+  0% { opacity: 0; transform: translateY(-4px); }
+  10% { opacity: 1; transform: translateY(0); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-2px); }
+}
 .conflict-summary.has-issues {
   border-color: var(--soft-red);
   background: var(--soft-red-bg);
