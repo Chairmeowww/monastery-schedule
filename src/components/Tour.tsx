@@ -11,37 +11,37 @@ const STEPS: Step[] = [
   {
     title: 'Welcome',
     body:
-      'This is the weekly schedule. Each row is a duty (Dinner, Supper, Table, and so on). Each column is a day of the week. The grid starts with the standing pattern already filled in — so you only need to adjust this week’s changes.',
+      'This is the weekly schedule. Each row is a duty (Dinner, Supper, Table, and so on). Each column is a day of the week. The grid starts empty — your first job is to fill in what a normal week looks like, then save it as the default. After that, every new week opens with that pattern already in place.',
   },
   {
     target: '.palette',
     title: 'The sisters',
     body:
-      'These nine names are the sisters. The small number after each name (Suz · 2) shows how many duties she has this week.',
-  },
-  {
-    target: '.grid',
-    title: 'Placing a sister',
-    body:
-      'To assign someone to a duty: click her name on the right, then click a cell. To remove her, click her name inside the cell. To add a note to a cell, right-click it.',
-  },
-  {
-    target: '.conflict-summary',
-    title: 'Conflicts',
-    body:
-      'When two rules clash — for example, a sister scheduled twice on the same day — a soft-red note appears inside the affected cell, and the count goes up here. When it says “Schedule is clear,” you’re done. Click any red note to dismiss it with a reason.',
+      'These nine names are the sisters. To assign one to a duty: click her name on the right, then click a cell. To remove her, click her name inside the cell. To add a second sister to the same cell (Victoria + a helper, etc.), hold Shift while clicking.',
   },
   {
     target: '.context-strip',
-    title: 'This week’s context',
+    title: 'Day of solitude, soup, appointments',
     body:
-      'Set the day of solitude, choose which days are soup days, and add any doctor appointments. The schedule re-checks itself as you change them.',
+      'Above the grid: set the quiet day for this week, mark soup days, and add doctor appointments by clicking the + on the day. Appointments clear that day’s other duties.',
+  },
+  {
+    target: '.conflict-summary',
+    title: 'Warnings',
+    body:
+      'As you assign sisters, the system flags real mistakes — a sister double-booked on a day, the wrong sister for a role (Annette on dinner, Gertrude on laundry), Eucharist clashes. Red text in a cell and the count up here mean a real conflict to fix. Soft gold text means a TODO reminder, not a mistake.',
   },
   {
     target: '.palette-actions',
-    title: 'Printing',
+    title: 'Save your standard week',
     body:
-      'When the week looks right, click “Print schedule” to print a calm one-page schedule for the kitchen wall. You can reopen this tour anytime from the “Show tour” button.',
+      'Once you have a typical week filled in the way you like it, click "Set as default". The app remembers it as your standing pattern and uses it to pre-fill every new week. A backup file also downloads automatically — keep it somewhere safe in case your browser data ever gets cleared.',
+  },
+  {
+    target: '.palette-actions',
+    title: 'Each week from now on',
+    body:
+      'Open the app, the standing pattern is already there, you just adjust this week’s exceptions. Reset to default restores it any time. Clear all gives you a blank week (retreats, holidays). Print schedule produces a one-page version for the kitchen wall. Reopen this tour from the Show tour button.',
   },
 ];
 

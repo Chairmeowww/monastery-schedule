@@ -15,8 +15,18 @@ function formatWeekOf(iso: string): string {
 
 export function WeekHeader({ week, conflicts, onWeekOfChange }: Props) {
   const visible = conflicts.filter((c) => !week.dismissals[c.key]);
-  const hard = visible.filter((c) => c.severity === 'hard').length;
-  const soft = visible.filter((c) => c.severity === 'soft').length;
+  // Dedupe by (rule, message) so the header count matches the panel — otherwise rules
+  // that emit one conflict per affected cell (e.g. R22 firing twice for a same-day double)
+  // were inflating the count past what the panel actually showed.
+  const dedupKeys = new Set<string>();
+  const uniq = visible.filter((c) => {
+    const k = `${c.rule}::${c.message}`;
+    if (dedupKeys.has(k)) return false;
+    dedupKeys.add(k);
+    return true;
+  });
+  const hard = uniq.filter((c) => c.severity === 'hard').length;
+  const soft = uniq.filter((c) => c.severity === 'soft').length;
   const isClear = hard === 0 && soft === 0;
 
   // "Schedule is clear" is a transient acknowledgment — show only when the user

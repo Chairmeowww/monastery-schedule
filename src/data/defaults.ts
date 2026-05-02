@@ -89,18 +89,24 @@ export function clearStandingPattern(): void {
   }
 }
 
-/** Pre-filled assignments for a fresh week — user-saved pattern, or seed fallback. */
+/** Pre-filled assignments for a fresh week — user-saved pattern only. Empty until she saves one. */
 export function defaultAssignments(): Assignment[] {
   const saved = loadStandingPattern();
   if (saved) return saved.assignments.map((a) => ({ ...a, sisterIds: [...a.sisterIds] }));
-  return seedAssignments();
+  return [];
 }
 
-/** Default soup days for a fresh week — user-saved pattern, or seed fallback. */
+/** Default soup days for a fresh week — user-saved pattern only. Empty until she saves one. */
 export function defaultSoupDays(): DayOfWeek[] {
   const saved = loadStandingPattern();
   if (saved) return [...saved.soupDays];
-  return [...SEED_SOUP_DAYS];
+  return [];
+}
+
+/** Reference: the seed pattern from the brief. Available if a user wants to use it as a starting
+ *  point via Import (we no longer auto-load it on first open — Suz inputs her own). */
+export function briefSeedAssignments(): Assignment[] {
+  return seedAssignments();
 }
 
 export function freshWeek(weekOf: string): Week {

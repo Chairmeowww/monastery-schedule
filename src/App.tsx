@@ -341,6 +341,25 @@ export function App() {
         onDismiss={dismissByKey}
         onUndismiss={undismissByKey}
       />
+      {week.assignments.length === 0 && !standingSavedAt && (
+        <div className="empty-week-hint no-print">
+          <strong>Empty week.</strong>
+          <span>
+            Click a sister on the right, then click a cell to assign her. Once your typical
+            week is filled in, click <em>Set as default</em> to save it as your standing pattern —
+            every new week will start from there.
+          </span>
+        </div>
+      )}
+      {week.assignments.length === 0 && standingSavedAt && (
+        <div className="empty-week-hint no-print">
+          <strong>This week is empty.</strong>
+          <span>
+            Click <em>Reset to default</em> on the right to bring back your saved standing pattern,
+            or start filling in cells to build this week from scratch.
+          </span>
+        </div>
+      )}
       <div className="layout no-print">
         <Grid
           week={week}
