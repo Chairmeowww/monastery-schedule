@@ -25,7 +25,7 @@ import {
   SOUP_MAKERS,
   VICTORIA_HELPERS,
 } from '../data/roster';
-import { isSpringSummer } from '../data/defaults';
+import { isSpringSummer, isFall } from '../data/defaults';
 
 // ---------- helpers ----------
 
@@ -106,8 +106,7 @@ export function R4_annette(week: Week): Conflict[] {
 }
 
 /** R5. Each table-able sister serves table once/week.
- *  The standing pattern's Suz-on-Mon-and-Thu is a sanctioned exception until Suz confirms.
- *  Until then: warn softly so it's visible but dismissable.
+ *  Suz is the brief's sanctioned exception ("I fill in where this is not possible") — silent.
  */
 export function R5_tableFrequency(week: Week): Conflict[] {
   const c: Conflict[] = [];
@@ -118,6 +117,7 @@ export function R5_tableFrequency(week: Week): Conflict[] {
   }
   for (const [id, n] of Object.entries(counts)) {
     if (n <= 1) continue;
+    if (id === 'suz') continue; // sanctioned exception per the brief
     c.push({
       rule: 'R5',
       severity: 'soft',
@@ -222,19 +222,22 @@ export function R10_soupMaker(week: Week): Conflict[] {
       }
     }
   }
-  // Soup-makers collectively cook supper at least 2×/week
-  const supperCountForMakers = week.assignments
-    .filter((a) => a.slot === 'supper')
-    .flatMap((a) => a.sisterIds)
-    .filter((id) => SOUP_MAKERS.includes(id)).length;
-  if (supperCountForMakers < 2) {
-    c.push({
-      rule: 'R10',
-      severity: 'soft',
-      message: 'Soup makers (Karen, Ann Marie, Gertrude, Suz) usually cook supper at least 2× a week.',
-      scope: { kind: 'week' },
-      key: 'R10::min-2',
-    });
+  // Soup-makers collectively cook supper at least 2×/week — only nudge once supper is being scheduled
+  const anySupper = week.assignments.some((a) => a.slot === 'supper');
+  if (anySupper) {
+    const supperCountForMakers = week.assignments
+      .filter((a) => a.slot === 'supper')
+      .flatMap((a) => a.sisterIds)
+      .filter((id) => SOUP_MAKERS.includes(id)).length;
+    if (supperCountForMakers < 2) {
+      c.push({
+        rule: 'R10',
+        severity: 'soft',
+        message: 'Soup makers (Karen, Ann Marie, Gertrude, Suz) usually cook supper at least 2× a week.',
+        scope: { kind: 'week' },
+        key: 'R10::min-2',
+      });
+    }
   }
   return c;
 }
@@ -319,7 +322,10 @@ export function R13_eucharistDinnerClash(week: Week): Conflict[] {
   return c;
 }
 
-/** R14. Angela Jonah's Monday is laundry only — no other duty Monday. */
+/** R14. Angela Jonah's Monday is laundry only.
+ *  HARD: any non-laundry duty on Monday for AJ.
+ *  SOFT: AJ not on Mon laundry at all (her standing role).
+ */
 export function R14_angelaJonahMonday(week: Week): Conflict[] {
   const c: Conflict[] = [];
   const aj = dutiesForSisterOnDay(week, 'angela_jonah', 'mon').filter((a) => a.slot !== 'laundry');
@@ -330,6 +336,16 @@ export function R14_angelaJonahMonday(week: Week): Conflict[] {
       message: 'Angela Jonah’s Monday is laundry only.',
       scope: { kind: 'cell', day: 'mon', slot: dup.slot },
       key: cellKey('mon', dup.slot, 'R14'),
+    });
+  }
+  const onMonLaundry = sistersInSlot(week, 'mon', 'laundry').includes('angela_jonah');
+  if (!onMonLaundry) {
+    c.push({
+      rule: 'R14',
+      severity: 'soft',
+      message: 'Angela Jonah usually has Monday for laundry.',
+      scope: { kind: 'cell', day: 'mon', slot: 'laundry' },
+      key: cellKey('mon', 'laundry', 'R14', 'aj-missing'),
     });
   }
   return c;
@@ -354,23 +370,26 @@ export function R15_angelaJonahLaundry(week: Week): Conflict[] {
   return [];
 }
 
-/** R16. Annette may do ironing for one period on Tue or Wed (informational). */
+/** R16. Annette's ironing belongs on Tue or Wed.
+ *  Silent if she's off ironing entirely (it's optional).
+ *  Soft warn if she's on ironing on any day other than Tue/Wed.
+ */
 export function R16_annetteIroning(week: Week): Conflict[] {
-  const ironing = week.assignments.filter(
+  const c: Conflict[] = [];
+  const annetteIroning = week.assignments.filter(
     (a) => a.slot === 'ironing' && a.sisterIds.includes('annette'),
   );
-  if (ironing.length === 0) {
-    return [
-      {
-        rule: 'R16',
-        severity: 'soft',
-        message: 'Reminder: Annette can do ironing on Tuesday or Wednesday.',
-        scope: { kind: 'sister', sisterId: 'annette' },
-        key: 'R16::annette-ironing',
-      },
-    ];
+  for (const a of annetteIroning) {
+    if (a.day === 'tue' || a.day === 'wed') continue;
+    c.push({
+      rule: 'R16',
+      severity: 'soft',
+      message: `Annette typically irons on Tuesday or Wednesday — not ${dayHuman(a.day)}.`,
+      scope: { kind: 'cell', day: a.day, slot: 'ironing' },
+      key: cellKey(a.day, 'ironing', 'R16', 'wrong-day'),
+    });
   }
-  return [];
+  return c;
 }
 
 /** R17. Shipping Mon–Thu: primary shippers are silent, backups soft-warn (emergency only),
@@ -416,7 +435,9 @@ export function R17_shipping(week: Week): Conflict[] {
   return c;
 }
 
-/** R18. Honey rules — at least once/week (HARD); per-job role validation when the cell's honeyJob is set. */
+/** R18. Honey rules — at least once/week (HARD); per-job role validation when the cell's honeyJob is set.
+ *  In Fall (Sep 23 – Nov 30) the brief says honey activity picks up — soft-nudge if only one period.
+ */
 export function R18_honey(week: Week): Conflict[] {
   const c: Conflict[] = [];
   const honey = week.assignments.filter((a) => a.slot === 'honey');
@@ -427,6 +448,14 @@ export function R18_honey(week: Week): Conflict[] {
       message: 'Honey is assigned at least once a week.',
       scope: { kind: 'week' },
       key: 'R18::missing',
+    });
+  } else if (honey.length < 2 && isFall(week.weekOf)) {
+    c.push({
+      rule: 'R18',
+      severity: 'soft',
+      message: 'Honey is typically scheduled more than once in Fall.',
+      scope: { kind: 'week' },
+      key: 'R18::fall-frequency',
     });
   }
 
@@ -506,7 +535,9 @@ export function R18_honey(week: Week): Conflict[] {
   return c;
 }
 
-/** R19. Garden in spring/summer: Ann Marie 3× HARD; Karen 1× SOFT; Gertrude 1× SOFT. Off-season dormant. */
+/** R19. Garden in spring/summer: Ann Marie 3× HARD; Karen 1× SOFT; Gertrude 1× SOFT.
+ *  Off-season dormant. Karen/Gertrude soft warns only fire once garden scheduling has begun.
+ */
 export function R19_garden(week: Week): Conflict[] {
   if (!isSpringSummer(week.weekOf)) return [];
   const c: Conflict[] = [];
@@ -522,25 +553,28 @@ export function R19_garden(week: Week): Conflict[] {
       key: 'R19::am',
     });
   }
-  const k = counts('karen');
-  if (k < 1) {
-    c.push({
-      rule: 'R19',
-      severity: 'soft',
-      message: 'Karen usually gardens once a week in season.',
-      scope: { kind: 'sister', sisterId: 'karen' },
-      key: 'R19::karen',
-    });
-  }
-  const g = counts('gertrude');
-  if (g < 1) {
-    c.push({
-      rule: 'R19',
-      severity: 'soft',
-      message: 'Gertrude usually gardens once a week in season.',
-      scope: { kind: 'sister', sisterId: 'gertrude' },
-      key: 'R19::gertrude',
-    });
+  // Only nag about Karen/Gertrude after garden scheduling has begun for the week.
+  if (garden.length > 0) {
+    const k = counts('karen');
+    if (k < 1) {
+      c.push({
+        rule: 'R19',
+        severity: 'soft',
+        message: 'Karen usually gardens once a week in season.',
+        scope: { kind: 'sister', sisterId: 'karen' },
+        key: 'R19::karen',
+      });
+    }
+    const g = counts('gertrude');
+    if (g < 1) {
+      c.push({
+        rule: 'R19',
+        severity: 'soft',
+        message: 'Gertrude usually gardens once a week in season.',
+        scope: { kind: 'sister', sisterId: 'gertrude' },
+        key: 'R19::gertrude',
+      });
+    }
   }
   return c;
 }
@@ -594,6 +628,29 @@ export function R21_appointmentClearsDay(week: Week): Conflict[] {
         key: cellKey(a.day, a.slot, 'R21', appt.sisterId),
       });
     }
+  }
+  return c;
+}
+
+/** R23. Cook on community day of solitude is also that day's table server.
+ *  Soft-warn if the dinner cook on DoS isn't on the table for that day too.
+ */
+export function R23_dosCookAlsoTable(week: Week): Conflict[] {
+  if (!week.daySolitude) return [];
+  const day = week.daySolitude;
+  const dinnerCooks = sistersInSlot(week, day, 'dinner');
+  if (dinnerCooks.length === 0) return [];
+  const tableServers = sistersInSlot(week, day, 'table');
+  const c: Conflict[] = [];
+  for (const cook of dinnerCooks) {
+    if (tableServers.includes(cook)) continue;
+    c.push({
+      rule: 'R23',
+      severity: 'soft',
+      message: `${NAME(cook)} cooks on day of solitude — usually also serves table that day.`,
+      scope: { kind: 'cell', day, slot: 'table' },
+      key: cellKey(day, 'table', 'R23', `cook-${cook}`),
+    });
   }
   return c;
 }
@@ -667,6 +724,7 @@ export const ALL_RULES = [
   R20_driverForAppointment,
   R21_appointmentClearsDay,
   R22_sameDayDouble,
+  R23_dosCookAlsoTable,
 ];
 
 export function validateWeek(week: Week, _roster?: Sister[]): ValidationResult {

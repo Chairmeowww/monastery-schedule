@@ -290,20 +290,20 @@
   .layout { grid-template-columns: 1fr; }
 }
 
-/* Grid */
+/* Grid — warm tan lines + earthy brown labels echo the sister chips, on a white field. */
 .grid {
   display: grid;
   grid-template-columns: 110px repeat(7, minmax(0, 1fr));
   background: var(--paper);
-  border: 1px solid var(--hair-light);
+  border: 1px solid var(--chip-border);
   border-radius: var(--radius);
   overflow: hidden;
 }
 .grid .head,
 .grid .row-label,
 .grid .cell {
-  border-right: 1px solid var(--hair-light);
-  border-bottom: 1px solid var(--hair-light);
+  border-right: 1px solid var(--chip-border);
+  border-bottom: 1px solid var(--chip-border);
   padding: var(--space-2) var(--space-3);
   min-height: 56px;
   font-size: var(--fs-sm);
@@ -312,20 +312,20 @@
 .grid .cell.last,
 .grid .row-label.last { border-right: none; }
 .grid .head {
-  background: var(--ground);
+  background: var(--paper);
   font-variant: small-caps;
   letter-spacing: 0.1em;
-  color: var(--muted);
+  color: var(--chip-text);
   text-align: center;
   font-weight: 500;
   padding: var(--space-3) var(--space-2);
 }
-.grid .head.sunday-divider { border-left: 2px solid var(--accent-soft); }
+.grid .head.sunday-divider { border-left: 2px solid var(--chip-border); }
 .grid .row-label {
-  background: var(--ground);
+  background: var(--paper);
   font-variant: small-caps;
   letter-spacing: 0.1em;
-  color: var(--muted);
+  color: var(--chip-text);
   display: flex;
   align-items: center;
 }
@@ -336,9 +336,12 @@
   cursor: pointer;
   transition: background-color 100ms ease;
 }
-.grid .cell:hover { background: #FBF8F3; }
-.grid .cell.sunday-divider { border-left: 2px solid var(--accent-soft); }
-.grid .cell.target { background: var(--soft-gold-bg); }
+.grid .cell:hover { background: #FAFAFC; }
+.grid .cell.sunday-divider { border-left: 2px solid var(--chip-border); }
+.grid .cell.target {
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--chip-accent-soft);
+}
 .grid .cell .chips {
   display: flex;
   flex-wrap: wrap;

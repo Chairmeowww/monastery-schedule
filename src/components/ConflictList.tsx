@@ -13,8 +13,20 @@ export function ConflictList({ conflicts, week, onDismiss, onUndismiss }: Props)
 
   const active = conflicts.filter((c) => !week.dismissals[c.key]);
   const dismissed = conflicts.filter((c) => week.dismissals[c.key]);
-  const hard = active.filter((c) => c.severity === 'hard');
-  const soft = active.filter((c) => c.severity === 'soft');
+  // Cells still surface every per-cell instance of a conflict, but the panel collapses
+  // duplicates by (rule, message) so the same warning isn't listed twice.
+  const dedup = (items: Conflict[]) => {
+    const seen = new Set<string>();
+    return items.filter((c) => {
+      const k = `${c.rule}::${c.message}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  };
+  const hard = dedup(active.filter((c) => c.severity === 'hard'));
+  const soft = dedup(active.filter((c) => c.severity === 'soft'));
+  const dismissedDeduped = dedup(dismissed);
 
   if (active.length === 0 && dismissed.length === 0) return null;
 
@@ -45,11 +57,11 @@ export function ConflictList({ conflicts, week, onDismiss, onUndismiss }: Props)
               </ul>
             </div>
           )}
-          {dismissed.length > 0 && (
+          {dismissedDeduped.length > 0 && (
             <div className="conflict-group">
               <h4>Dismissed this week</h4>
               <ul>
-                {dismissed.map((c) => (
+                {dismissedDeduped.map((c) => (
                   <li key={c.key} className="conflict-row dismissed">
                     <span className="row-rule">{c.rule}</span>
                     <span className="row-message">{c.message}</span>

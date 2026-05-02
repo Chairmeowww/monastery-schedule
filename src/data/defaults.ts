@@ -165,3 +165,13 @@ export function isSpringSummer(iso: string): boolean {
   if (month === 9 && dayOfMonth > 22) return false;
   return true;
 }
+
+/** Sep 23 – Nov 30: honey activity picks up in Fall per the brief. */
+export function isFall(iso: string): boolean {
+  const d = fromISODate(iso);
+  const month = d.getMonth() + 1;
+  const dayOfMonth = d.getDate();
+  if (month === 9 && dayOfMonth >= 23) return true;
+  if (month === 10 || month === 11) return true;
+  return false;
+}
