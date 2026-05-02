@@ -12,8 +12,21 @@ function emptyValidWeek(): Week {
   //           AJ laundry mon.
   // Override shipping rotation here to avoid Tue/Wed conflicts with the table standing.
   const w = freshWeek(baseWeekOf);
-  // Replace shipping pre-fill to avoid Gertrude tue + table tue clash
-  w.assignments = w.assignments.filter((a) => a.slot !== 'shipping');
+  // freshWeek now returns empty until the user saves a standing pattern. The §11
+  // tests assume the brief's defaults (table standing, AJ Mon laundry, soup days), so
+  // we set them up explicitly here.
+  w.soupDays = ['mon', 'wed', 'sun'];
+  w.assignments = [
+    { day: 'mon', slot: 'table', sisterIds: ['suz'] },
+    { day: 'tue', slot: 'table', sisterIds: ['gertrude'] },
+    { day: 'wed', slot: 'table', sisterIds: ['victoria'] },
+    { day: 'thu', slot: 'table', sisterIds: ['suz'] },
+    { day: 'fri', slot: 'table', sisterIds: ['claire'] },
+    { day: 'sat', slot: 'table', sisterIds: ['angela_jonah'] },
+    { day: 'sun', slot: 'table', sisterIds: ['ann_marie'] },
+    { day: 'mon', slot: 'laundry', sisterIds: ['angela_jonah'] },
+  ];
+  // Shipping rotation chosen to dodge Tue/Wed table standing
   w.assignments.push({ day: 'mon', slot: 'shipping', sisterIds: ['claire'] });
   w.assignments.push({ day: 'tue', slot: 'shipping', sisterIds: ['karen'] });
   w.assignments.push({ day: 'wed', slot: 'shipping', sisterIds: ['gertrude'] });
