@@ -1,5 +1,6 @@
 import {
   DAYS,
+  DAY_LABEL,
   DAY_SHORT,
   SLOTS,
   SLOT_LABEL,
@@ -39,14 +40,18 @@ export function PrintFrame({ week, rosterById }: Props) {
       </div>
       <footer>
         {week.daySolitude
-          ? `Day of solitude: ${week.daySolitude.toUpperCase()}`
+          ? `Day of solitude: ${DAY_LABEL[week.daySolitude]}`
           : ''}
         {week.appointments.length > 0 && (
           <span>
-            {' '}
-            · Appointments:{' '}
+            {week.daySolitude ? '   ·   ' : ''}
+            Appointments:{' '}
             {week.appointments
-              .map((a) => `${rosterById[a.sisterId]?.name ?? a.sisterId} (${a.day})`)
+              .map((a) => {
+                const name = rosterById[a.sisterId]?.name ?? a.sisterId;
+                const type = a.type ? ` ${a.type}` : '';
+                return `${name} (${DAY_LABEL[a.day]}${type ? ',' + type : ''})`;
+              })
               .join(', ')}
           </span>
         )}

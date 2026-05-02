@@ -249,13 +249,57 @@ export function App() {
   const onSetAsDefault = () => {
     if (
       !confirm(
-        "Save this week's pattern as the new standing pattern? It will be used to pre-fill every new week from now on.",
+        "Save this week's pattern as the new standing pattern? It will be used to pre-fill every new week from now on. A backup file will also download to your computer.",
       )
     ) {
       return;
     }
     saveStandingPattern(week.assignments, week.soupDays);
     setStandingSavedAt(loadStandingPattern()?.savedAt ?? null);
+    // Auto-export a backup file: localStorage alone isn't durable (browser wipes,
+    // device swaps, etc). The download lands in her Downloads folder where most
+    // cloud sync services (iCloud Drive, OneDrive, Dropbox) replicate it offsite.
+    onExportStandingPattern();
+  };
+
+  const onExportStandingPattern = () => {
+    const pattern = loadStandingPattern() ?? {
+      assignments: defaultAssignments(),
+      soupDays: defaultSoupDays(),
+      savedAt: new Date().toISOString(),
+    };
+    const blob = new Blob([JSON.stringify(pattern, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const today = new Date().toISOString().slice(0, 10);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `monastery-standing-pattern-${today}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const onImportStandingPattern = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        if (!parsed || !Array.isArray(parsed.assignments) || !Array.isArray(parsed.soupDays)) {
+          alert('That file does not look like a standing pattern (missing assignments or soupDays).');
+          return;
+        }
+        if (!confirm('Replace your current standing pattern with the contents of this file? This cannot be undone except by re-importing the previous file.')) {
+          return;
+        }
+        saveStandingPattern(parsed.assignments, parsed.soupDays);
+        setStandingSavedAt(loadStandingPattern()?.savedAt ?? null);
+        alert('Standing pattern imported. New weeks will start from this pattern.');
+      } catch (e) {
+        alert(`Could not read that file: ${e instanceof Error ? e.message : 'invalid JSON'}.`);
+      }
+    };
+    reader.readAsText(file);
   };
 
   const onClearWeek = () => {
@@ -324,6 +368,8 @@ export function App() {
           onResetWeek={onResetWeek}
           onSetAsDefault={onSetAsDefault}
           onClearWeek={onClearWeek}
+          onExportStandingPattern={onExportStandingPattern}
+          onImportStandingPattern={onImportStandingPattern}
           onShowTour={openTour}
           standingSavedAt={standingSavedAt}
         />

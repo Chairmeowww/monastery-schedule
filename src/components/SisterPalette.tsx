@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { Sister, Week } from '../types';
 import { SisterChip } from './SisterChip';
 
@@ -10,6 +11,8 @@ type Props = {
   onResetWeek: () => void;
   onSetAsDefault: () => void;
   onClearWeek: () => void;
+  onExportStandingPattern: () => void;
+  onImportStandingPattern: (file: File) => void;
   onShowTour: () => void;
   /** ISO timestamp of the most recent "Set as default", or null if never customized. */
   standingSavedAt: string | null;
@@ -24,9 +27,12 @@ export function SisterPalette({
   onResetWeek,
   onSetAsDefault,
   onClearWeek,
+  onExportStandingPattern,
+  onImportStandingPattern,
   onShowTour,
   standingSavedAt,
 }: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   // Build per-sister stats
   const stats = roster.map((s) => {
     const count = week.assignments
@@ -76,6 +82,30 @@ export function SisterPalette({
         {standingSavedAt && (
           <p className="standing-meta">Standing pattern saved {formatSavedAt(standingSavedAt)}</p>
         )}
+        <p className="standing-backup">
+          <button type="button" className="link-btn" onClick={onExportStandingPattern}>
+            Export standing pattern
+          </button>
+          {' · '}
+          <button
+            type="button"
+            className="link-btn"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            Import
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onImportStandingPattern(f);
+              e.target.value = ''; // allow re-importing the same file
+            }}
+          />
+        </p>
       </div>
     </aside>
   );
