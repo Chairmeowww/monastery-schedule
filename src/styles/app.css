@@ -370,6 +370,23 @@
   color: var(--muted);
   font-style: italic;
 }
+.cell-note-clear {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 4px;
+  margin-left: 4px;
+  cursor: pointer;
+  font-style: normal;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.cell-note-clear:hover {
+  background: var(--grid-line);
+  color: var(--ink);
+}
 
 /* Sister chip — uses chip-specific warm tokens so people stay distinct from the cool chrome. */
 .chip {

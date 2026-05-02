@@ -121,6 +121,19 @@ export function App() {
     });
   };
 
+  /** Default click — replace whatever is in the cell with this single sister. */
+  const onReplace = (day: DayOfWeek, slot: Slot, sisterId: string) => {
+    setWeek((w) => {
+      const existing = w.assignments.find((a) => a.day === day && a.slot === slot);
+      const replaced = existing
+        ? w.assignments.map((a) =>
+            a === existing ? { ...a, sisterIds: [sisterId] } : a,
+          )
+        : [...w.assignments, { day, slot, sisterIds: [sisterId] }];
+      return { ...w, assignments: replaced, dismissals: dropClearAllDismissals(w.dismissals, day, slot) };
+    });
+  };
+
   const onSetHoneyJob = (day: DayOfWeek, job: HoneyJob | null) => {
     setWeek((w) => {
       const existing = w.assignments.find((a) => a.day === day && a.slot === 'honey');
@@ -162,6 +175,23 @@ export function App() {
   const onCellNotePrompt = (day: DayOfWeek, slot: Slot) => {
     const a = week.assignments.find((x) => x.day === day && x.slot === slot);
     setNotePrompt({ kind: 'cell', day, slot, current: a?.note ?? '' });
+  };
+
+  const onClearCellNote = (day: DayOfWeek, slot: Slot) => {
+    setWeek((w) => {
+      const existing = w.assignments.find((a) => a.day === day && a.slot === slot);
+      if (!existing) return w;
+      // If only the note made the assignment exist (no sisters), remove the assignment entirely.
+      if (existing.sisterIds.length === 0) {
+        return { ...w, assignments: w.assignments.filter((a) => a !== existing) };
+      }
+      return {
+        ...w,
+        assignments: w.assignments.map((a) =>
+          a === existing ? { ...a, note: undefined } : a,
+        ),
+      };
+    });
   };
 
   const submitNote = (text: string) => {
@@ -277,9 +307,11 @@ export function App() {
             onAssign(day, slot, id);
             // keep selection: she may want to assign the same sister elsewhere; tap chip again to clear
           }}
+          onReplace={onReplace}
           onUnassign={onUnassign}
           onDismissConflict={onDismissConflict}
           onCellNotePrompt={onCellNotePrompt}
+          onClearCellNote={onClearCellNote}
           onSetHoneyJob={onSetHoneyJob}
           onEmptyCellClick={() => flashHint('Pick a sister on the right, then click a cell.')}
         />
@@ -353,7 +385,11 @@ function NotePrompt({
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) onSubmit(text);
+            // Slack/iMessage-style: Enter saves, Shift+Enter inserts a newline.
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              onSubmit(text);
+            }
             if (e.key === 'Escape') onCancel();
           }}
         />

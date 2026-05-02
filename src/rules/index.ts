@@ -59,18 +59,24 @@ function countSlotForSister(week: Week, sisterId: string, slot: Slot): number {
 
 // ---------- rules ----------
 
-/** R1. Each of the six dinner-cooks appears exactly once on dinner Mon–Sat. */
+/** R1. Each of the six dinner-cooks appears exactly once on dinner Mon–Sat.
+ *  Emits a conflict on every dinner cell where the over-assigned sister appears
+ *  so the warning is visible right at the cell, not just in the panel.
+ */
 export function R1_dinnerFrequency(week: Week): Conflict[] {
   const c: Conflict[] = [];
   for (const id of DINNER_COOKS) {
     const n = countSlotForSisterMonSat(week, id, 'dinner');
-    if (n > 1) {
+    if (n <= 1) continue;
+    const message = `${NAME(id)} is on dinner ${n} times Mon–Sat (should be once).`;
+    for (const a of week.assignments) {
+      if (a.slot !== 'dinner' || a.day === 'sun' || !a.sisterIds.includes(id)) continue;
       c.push({
         rule: 'R1',
         severity: 'hard',
-        message: `${NAME(id)} is on dinner ${n} times Mon–Sat (should be once).`,
-        scope: { kind: 'sister', sisterId: id },
-        key: `R1::${id}`,
+        message,
+        scope: { kind: 'cell', day: a.day, slot: 'dinner' },
+        key: cellKey(a.day, 'dinner', 'R1', id),
       });
     }
   }
@@ -107,6 +113,7 @@ export function R4_annette(week: Week): Conflict[] {
 
 /** R5. Each table-able sister serves table once/week.
  *  Suz is the brief's sanctioned exception ("I fill in where this is not possible") — silent.
+ *  Warning surfaces on each table cell where the over-assigned sister appears.
  */
 export function R5_tableFrequency(week: Week): Conflict[] {
   const c: Conflict[] = [];
@@ -118,34 +125,37 @@ export function R5_tableFrequency(week: Week): Conflict[] {
   for (const [id, n] of Object.entries(counts)) {
     if (n <= 1) continue;
     if (id === 'suz') continue; // sanctioned exception per the brief
-    c.push({
-      rule: 'R5',
-      severity: 'soft',
-      message: `${NAME(id)} is on table service ${n}× this week (usually once).`,
-      scope: { kind: 'sister', sisterId: id },
-      key: `R5::${id}`,
-    });
+    const message = `${NAME(id)} is on table service ${n}× this week (usually once).`;
+    for (const a of week.assignments) {
+      if (a.slot !== 'table' || !a.sisterIds.includes(id)) continue;
+      c.push({
+        rule: 'R5',
+        severity: 'soft',
+        message,
+        scope: { kind: 'cell', day: a.day, slot: 'table' },
+        key: cellKey(a.day, 'table', 'R5', id),
+      });
+    }
   }
   return c;
 }
 
-/** R6. Angela Jonah cooks at most once per week (dinner OR supper). */
+/** R6. Angela Jonah cooks at most once per week (dinner OR supper).
+ *  Surfaces on every cooking cell where AJ appears once she crosses the threshold.
+ */
 export function R6_angelaJonahCook(week: Week): Conflict[] {
   const cooks = week.assignments.filter(
     (a) => (a.slot === 'dinner' || a.slot === 'supper') && a.sisterIds.includes('angela_jonah'),
   );
-  if (cooks.length > 1) {
-    return [
-      {
-        rule: 'R6',
-        severity: 'hard',
-        message: `Angela Jonah is cooking ${cooks.length}× this week (max once: dinner OR supper).`,
-        scope: { kind: 'sister', sisterId: 'angela_jonah' },
-        key: 'R6::aj-cook',
-      },
-    ];
-  }
-  return [];
+  if (cooks.length <= 1) return [];
+  const message = `Angela Jonah is cooking ${cooks.length}× this week (max once: dinner OR supper).`;
+  return cooks.map((a) => ({
+    rule: 'R6',
+    severity: 'hard',
+    message,
+    scope: { kind: 'cell', day: a.day, slot: a.slot },
+    key: cellKey(a.day, a.slot, 'R6'),
+  }));
 }
 
 /** R7. Annette never makes soup; never assigned to a soup day's supper. */

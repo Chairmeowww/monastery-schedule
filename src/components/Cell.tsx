@@ -16,9 +16,11 @@ type Props = {
   isLastColumn?: boolean;
   dimmed?: boolean;
   onAssign: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
+  onReplace: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
   onUnassign: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
   onDismissConflict: (key: string) => void;
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
+  onClearCellNote?: (day: DayOfWeek, slot: Slot) => void;
   onSetHoneyJob?: (day: DayOfWeek, job: HoneyJob | null) => void;
   onEmptyCellClick?: () => void;
 };
@@ -37,9 +39,11 @@ export function Cell({
   isLastColumn,
   dimmed,
   onAssign,
+  onReplace,
   onUnassign,
   onDismissConflict,
   onCellNotePrompt,
+  onClearCellNote,
   onSetHoneyJob,
   onEmptyCellClick,
 }: Props) {
@@ -72,8 +76,13 @@ export function Cell({
     }
     if (sisterIds.includes(selectedSisterId)) {
       onUnassign(day, slot, selectedSisterId);
-    } else {
+      return;
+    }
+    // Default: replace any existing sister(s). Shift-click adds (for multi-person cells).
+    if (e.shiftKey) {
       onAssign(day, slot, selectedSisterId);
+    } else {
+      onReplace(day, slot, selectedSisterId);
     }
   };
 
@@ -106,7 +115,25 @@ export function Cell({
           );
         })}
       </div>
-      {note && <span className="cell-note">— {note}</span>}
+      {note && (
+        <span className="cell-note">
+          — {note}
+          {onClearCellNote && (
+            <button
+              type="button"
+              className="cell-note-clear no-print"
+              title="Clear this note"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClearCellNote(day, slot);
+              }}
+              aria-label="Clear note"
+            >
+              ×
+            </button>
+          )}
+        </span>
+      )}
       {slot === 'honey' && sisterIds.length > 0 && onSetHoneyJob && (
         <div className="honey-job no-print" onClick={(e) => e.stopPropagation()}>
           <button

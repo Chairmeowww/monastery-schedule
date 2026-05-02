@@ -18,9 +18,11 @@ type Props = {
   rosterById: Record<string, Sister>;
   selectedSisterId: string | null;
   onAssign: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
+  onReplace: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
   onUnassign: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
   onDismissConflict: (key: string) => void;
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
+  onClearCellNote: (day: DayOfWeek, slot: Slot) => void;
   onSetHoneyJob: (day: DayOfWeek, job: HoneyJob | null) => void;
   onEmptyCellClick?: () => void;
 };
@@ -49,9 +51,11 @@ export function Grid({
   rosterById,
   selectedSisterId,
   onAssign,
+  onReplace,
   onUnassign,
   onDismissConflict,
   onCellNotePrompt,
+  onClearCellNote,
   onSetHoneyJob,
   onEmptyCellClick,
 }: Props) {
@@ -84,9 +88,11 @@ export function Grid({
           selectedSisterId={selectedSisterId}
           cellConflicts={cellConflicts}
           onAssign={onAssign}
+          onReplace={onReplace}
           onUnassign={onUnassign}
           onDismissConflict={onDismissConflict}
           onCellNotePrompt={onCellNotePrompt}
+          onClearCellNote={onClearCellNote}
           onSetHoneyJob={onSetHoneyJob}
           onEmptyCellClick={onEmptyCellClick}
         />
@@ -102,9 +108,11 @@ function SlotRow({
   selectedSisterId,
   cellConflicts,
   onAssign,
+  onReplace,
   onUnassign,
   onDismissConflict,
   onCellNotePrompt,
+  onClearCellNote,
   onSetHoneyJob,
   onEmptyCellClick,
 }: {
@@ -114,9 +122,11 @@ function SlotRow({
   selectedSisterId: string | null;
   cellConflicts: (day: DayOfWeek, slot: Slot) => Conflict[];
   onAssign: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
+  onReplace: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
   onUnassign: (day: DayOfWeek, slot: Slot, sisterId: string) => void;
   onDismissConflict: (key: string) => void;
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
+  onClearCellNote: (day: DayOfWeek, slot: Slot) => void;
   onSetHoneyJob: (day: DayOfWeek, job: HoneyJob | null) => void;
   onEmptyCellClick?: () => void;
 }) {
@@ -140,9 +150,11 @@ function SlotRow({
             isSundayDivider={day === 'sun'}
             isLastColumn={day === 'sun'}
             onAssign={onAssign}
+            onReplace={onReplace}
             onUnassign={onUnassign}
             onDismissConflict={onDismissConflict}
             onCellNotePrompt={onCellNotePrompt}
+            onClearCellNote={onClearCellNote}
             onSetHoneyJob={onSetHoneyJob}
             onEmptyCellClick={onEmptyCellClick}
           />

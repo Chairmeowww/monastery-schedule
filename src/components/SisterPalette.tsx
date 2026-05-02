@@ -48,11 +48,7 @@ export function SisterPalette({
               showCount
               hasAppointment={hasAppointment}
               selected={selectedSisterId === sister.id}
-              tip={
-                sister.restrictions.length
-                  ? sister.restrictions.join(' · ')
-                  : 'Click, then click a cell to assign'
-              }
+              tip="Click, then click a cell to assign"
               onClick={() => onSelectSister(selectedSisterId === sister.id ? null : sister.id)}
             />
           </span>
