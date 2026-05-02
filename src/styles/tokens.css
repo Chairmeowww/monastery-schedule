@@ -1,13 +1,24 @@
 :root {
-  --ink: #2A2724;
-  --soft: #3F3A33;
-  --muted: #6E655A;
-  --hair-light: #D8D2C7;
-  --hair: #B8B0A4;
-  --accent: #9C8A5C;
-  --accent-soft: #BFAE83;
-  --ground: #FAF7F2;
+  /* Page chrome: austere white/grey. */
+  --ink: #1A1A1C;
+  --soft: #3A3A3D;
+  --muted: #6E6E72;
+  --hair-light: #E5E5E7;
+  --hair: #C7C7CC;
+  --accent: #4A4A4D;
+  --accent-soft: #8E8E93;
+  --ground: #F5F5F7;
   --paper: #FFFFFF;
+
+  /* Sister chips keep the original warm palette so people read as people, not infrastructure. */
+  --chip-bg: #FAF7F2;
+  --chip-border: #D8D2C7;
+  --chip-text: #2A2724;
+  --chip-muted: #6E655A;
+  --chip-accent: #9C8A5C;
+  --chip-accent-soft: #BFAE83;
+
+  /* Validation signal colors — kept warm enough to read instantly against the cool chrome. */
   --soft-red: #B86A5E;
   --soft-red-bg: #F4E5E2;
   --soft-green: #7C8F6A;

@@ -368,45 +368,45 @@
   font-style: italic;
 }
 
-/* Sister chip */
+/* Sister chip — uses chip-specific warm tokens so people stay distinct from the cool chrome. */
 .chip {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  background: var(--ground);
-  border: 1px solid var(--hair-light);
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
   border-radius: 999px;
   font-size: var(--fs-sm);
   font-style: italic;
-  color: var(--ink);
+  color: var(--chip-text);
   cursor: pointer;
   user-select: none;
   transition: all 100ms ease;
 }
 .chip:hover {
-  border-color: var(--accent);
+  border-color: var(--chip-accent);
 }
 .chip.assigned-here:hover {
   background: var(--soft-red-bg);
   border-color: var(--soft-red);
 }
 .chip.manager {
-  border-bottom: 2px solid var(--accent);
+  border-bottom: 2px solid var(--chip-accent);
 }
 .chip .count {
   font-size: 10px;
   font-style: normal;
-  color: var(--muted);
+  color: var(--chip-muted);
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
 }
-.chip .marker { font-size: 10px; color: var(--accent); margin-left: 2px; }
+.chip .marker { font-size: 10px; color: var(--chip-accent); margin-left: 2px; }
 .chip.dim { opacity: 0.4; }
 .chip.selected {
-  background: var(--accent);
+  background: var(--chip-accent);
   color: var(--paper);
-  border-color: var(--accent);
+  border-color: var(--chip-accent);
 }
 .chip.selected .count { color: rgba(255,255,255,0.8); }
 
