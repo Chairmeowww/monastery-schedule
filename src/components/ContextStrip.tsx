@@ -15,12 +15,12 @@ export function ContextStrip({ week, roster, onUpdateWeek }: Props) {
     onUpdateWeek({ ...week, soupDays: vals });
   };
 
-  const addAppointment = () => {
+  const addAppointmentForDay = (day: DayOfWeek) => {
     onUpdateWeek({
       ...week,
       appointments: [
         ...week.appointments,
-        { sisterId: roster[0].id, day: 'mon', type: 'Doctor' },
+        { sisterId: roster[0].id, day, type: 'Doctor' },
       ],
     });
   };
@@ -63,58 +63,55 @@ export function ContextStrip({ week, roster, onUpdateWeek }: Props) {
         <SoupDayPicker days={week.soupDays} onChange={setSoupDays} />
       </div>
 
-      <div className="field">
+      <div className="field appointments-field">
         <span className="label">Appointments</span>
         <span className="hint">doctor visits — clears that day’s duties</span>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-          {week.appointments.map((appt, i) => (
-            <span
-              key={i}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '2px 6px',
-                background: 'var(--ground)',
-                border: '1px solid var(--hair-light)',
-                borderRadius: '999px',
-                fontSize: 'var(--fs-xs)',
-              }}
-            >
-              <select
-                value={appt.sisterId}
-                onChange={(e) => updateAppointment(i, { sisterId: e.target.value })}
-                style={{ border: 'none', background: 'transparent', padding: 0, fontSize: 'var(--fs-xs)' }}
-              >
-                {roster.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={appt.day}
-                onChange={(e) => updateAppointment(i, { day: e.target.value as DayOfWeek })}
-                style={{ border: 'none', background: 'transparent', padding: 0, fontSize: 'var(--fs-xs)' }}
-              >
-                {DAYS.map((d) => (
-                  <option key={d} value={d}>
-                    {DAY_LABEL[d]}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={() => removeAppointment(i)}
-                aria-label="Remove appointment"
-                style={{ padding: '0 6px', fontSize: 'var(--fs-xs)', border: 'none' }}
-              >
-                ×
-              </button>
-            </span>
-          ))}
-          <button onClick={addAppointment} style={{ fontSize: 'var(--fs-xs)' }}>
-            + add
-          </button>
+        <div className="appointments-row">
+          {DAYS.map((day) => {
+            const idx = week.appointments.findIndex((a) => a.day === day);
+            const appt = idx >= 0 ? week.appointments[idx] : null;
+            return (
+              <div key={day} className={`appt-cell ${appt ? 'has-appt' : 'empty'}`}>
+                <span className="appt-day">{DAY_LABEL[day].slice(0, 3)}</span>
+                {appt ? (
+                  <div className="appt-content">
+                    <select
+                      value={appt.sisterId}
+                      onChange={(e) => updateAppointment(idx, { sisterId: e.target.value })}
+                      className="appt-sister"
+                    >
+                      {roster.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      value={appt.type}
+                      onChange={(e) => updateAppointment(idx, { type: e.target.value })}
+                      className="appt-type"
+                      placeholder="type"
+                    />
+                    <button
+                      onClick={() => removeAppointment(idx)}
+                      aria-label="Remove appointment"
+                      className="appt-remove"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    className="appt-add"
+                    onClick={() => addAppointmentForDay(day)}
+                    title={`Add appointment for ${DAY_LABEL[day]}`}
+                  >
+                    +
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

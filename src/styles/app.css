@@ -288,6 +288,84 @@
   background: var(--paper);
 }
 
+/* Appointments — standing 7-day mini-row */
+.appointments-field {
+  flex: 1 1 100%;
+}
+.appointments-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+  margin-top: 4px;
+}
+.appt-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+  padding: 4px 6px;
+  border: 1px dotted var(--grid-line);
+  border-radius: var(--radius-sm);
+  min-height: 48px;
+}
+.appt-cell .appt-day {
+  font-variant: small-caps;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  text-align: center;
+}
+.appt-cell.empty {
+  background: transparent;
+}
+.appt-cell.has-appt {
+  background: var(--chip-bg);
+  border-style: solid;
+  border-color: var(--chip-border);
+}
+.appt-add {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  padding: 4px 0;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.appt-cell.empty:hover .appt-add { color: var(--ink); background: var(--grid-line); }
+.appt-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: stretch;
+}
+.appt-sister, .appt-type {
+  font-size: var(--fs-xs);
+  font-style: italic;
+  border: none;
+  background: transparent;
+  padding: 1px 2px;
+  width: 100%;
+  min-width: 0;
+}
+.appt-sister:hover, .appt-type:hover {
+  background: var(--paper);
+  border-radius: 3px;
+}
+.appt-type::placeholder { color: var(--muted); font-style: italic; }
+.appt-remove {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  align-self: center;
+}
+.appt-remove:hover { color: var(--soft-red); }
+
 /* Layout: grid + palette */
 .layout {
   display: grid;
