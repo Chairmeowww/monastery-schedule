@@ -23,7 +23,7 @@ type Props = {
   onDismissConflict: (key: string) => void;
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
   onClearCellNote: (day: DayOfWeek, slot: Slot) => void;
-  onSetHoneyJob: (day: DayOfWeek, job: HoneyJob | null) => void;
+  onSetHoneyJobForSister: (day: DayOfWeek, sisterId: string, job: HoneyJob | null) => void;
   onEmptyCellClick?: () => void;
 };
 
@@ -56,7 +56,7 @@ export function Grid({
   onDismissConflict,
   onCellNotePrompt,
   onClearCellNote,
-  onSetHoneyJob,
+  onSetHoneyJobForSister,
   onEmptyCellClick,
 }: Props) {
   const cellConflicts = (day: DayOfWeek, slot: Slot) =>
@@ -75,6 +75,11 @@ export function Grid({
             className={`head ${d === 'sun' ? 'sunday-divider' : ''}`}
           >
             {dayHumanShort(d, week)}
+            {d === 'sun' && (
+              <span className="sunday-meal-hint" title="Sunday meal naming">
+                noon · Lunch (soup + cheese) | evening · Main Meal
+              </span>
+            )}
             {appts && <span className="day-appointments" title="Appointments today">{appts}</span>}
           </div>
         );
@@ -93,7 +98,7 @@ export function Grid({
           onDismissConflict={onDismissConflict}
           onCellNotePrompt={onCellNotePrompt}
           onClearCellNote={onClearCellNote}
-          onSetHoneyJob={onSetHoneyJob}
+          onSetHoneyJobForSister={onSetHoneyJobForSister}
           onEmptyCellClick={onEmptyCellClick}
         />
       ))}
@@ -113,7 +118,7 @@ function SlotRow({
   onDismissConflict,
   onCellNotePrompt,
   onClearCellNote,
-  onSetHoneyJob,
+  onSetHoneyJobForSister,
   onEmptyCellClick,
 }: {
   slot: Slot;
@@ -127,7 +132,7 @@ function SlotRow({
   onDismissConflict: (key: string) => void;
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
   onClearCellNote: (day: DayOfWeek, slot: Slot) => void;
-  onSetHoneyJob: (day: DayOfWeek, job: HoneyJob | null) => void;
+  onSetHoneyJobForSister: (day: DayOfWeek, sisterId: string, job: HoneyJob | null) => void;
   onEmptyCellClick?: () => void;
 }) {
   return (
@@ -142,7 +147,7 @@ function SlotRow({
             slot={slot}
             sisterIds={a?.sisterIds ?? []}
             note={a?.note}
-            honeyJob={a?.honeyJob}
+            honeyJobs={a?.honeyJobs}
             conflicts={cellConflicts(day, slot)}
             dismissals={week.dismissals}
             rosterById={rosterById}
@@ -155,7 +160,7 @@ function SlotRow({
             onDismissConflict={onDismissConflict}
             onCellNotePrompt={onCellNotePrompt}
             onClearCellNote={onClearCellNote}
-            onSetHoneyJob={onSetHoneyJob}
+            onSetHoneyJobForSister={onSetHoneyJobForSister}
             onEmptyCellClick={onEmptyCellClick}
           />
         );

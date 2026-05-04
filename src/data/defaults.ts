@@ -1,4 +1,23 @@
-import type { Assignment, DayOfWeek, Week } from '../types';
+import type { Assignment, DayOfWeek, HoneyJob, Week } from '../types';
+
+/** Migrate legacy single honeyJob field on an Assignment to per-sister honeyJobs map. */
+export function migrateAssignment(a: Assignment): Assignment {
+  const next: Assignment = { ...a };
+  if (!next.honeyJobs) next.honeyJobs = {};
+  if (next.honeyJob && next.sisterIds.length > 0) {
+    const job: HoneyJob = next.honeyJob;
+    for (const id of next.sisterIds) {
+      if (!next.honeyJobs[id]) next.honeyJobs[id] = job;
+    }
+    delete next.honeyJob;
+  }
+  return next;
+}
+
+/** Migrate every assignment in a week (mostly for old localStorage payloads). */
+export function migrateWeek(w: Week): Week {
+  return { ...w, assignments: w.assignments.map(migrateAssignment) };
+}
 
 /**
  * Seed table-service rotation. Used as the fallback standing pattern when the

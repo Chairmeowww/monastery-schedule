@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
-import type { DayOfWeek, HoneyJob, Slot, Week } from './types';
-import { ROSTER, SISTER_BY_ID } from './data/roster';
+import type { DayOfWeek, HoneyJob, Sister, Slot, Week } from './types';
 import {
   freshWeek,
   mondayOf,
@@ -9,7 +8,10 @@ import {
   emptyWeek,
   saveStandingPattern,
   loadStandingPattern,
+  migrateWeek,
 } from './data/defaults';
+import { initRoster, saveActiveRoster } from './data/rosterStore';
+import { ROSTER, SISTER_BY_ID } from './data/roster';
 import { validateWeek } from './rules';
 import { useUndoable } from './hooks/useUndoable';
 import { WeekHeader } from './components/WeekHeader';
@@ -19,11 +21,16 @@ import { SisterPalette } from './components/SisterPalette';
 import { PrintFrame } from './components/PrintFrame';
 import { Tour } from './components/Tour';
 import { ConflictList } from './components/ConflictList';
+import { RosterEditor } from './components/RosterEditor';
 
 const STORAGE_PREFIX = 'monastery-schedule:week:';
 const TOUR_KEY = 'monastery-schedule:tour-seen';
 
 const CLEAR_ALL_NOTE = 'Cleared by user';
+
+// Initialize the roster from localStorage at module load so any later import of
+// SISTER_BY_ID (e.g. inside the rules engine) sees the current state immediately.
+initRoster();
 
 /**
  * When the user touches a cell after Clear all, wake up dismissed warnings for the
@@ -53,7 +60,7 @@ function dropClearAllDismissals(
 function readWeek(weekOf: string): Week {
   try {
     const raw = localStorage.getItem(STORAGE_PREFIX + weekOf);
-    if (raw) return JSON.parse(raw) as Week;
+    if (raw) return migrateWeek(JSON.parse(raw) as Week);
   } catch {
     // ignore
   }
@@ -73,6 +80,8 @@ export function App() {
   const { value: week, set: setWeek, replace: replaceWeek } = useUndoable<Week>(
     readWeek(initialWeekOf),
   );
+  const [roster, setRoster] = useState<Sister[]>(() => [...ROSTER]);
+  const [showRosterEditor, setShowRosterEditor] = useState(false);
   const [selectedSisterId, setSelectedSisterId] = useState<string | null>(null);
   const [showTour, setShowTour] = useState<boolean>(() => {
     try { return !localStorage.getItem(TOUR_KEY); } catch { return true; }
@@ -106,7 +115,10 @@ export function App() {
     writeWeek(week);
   }, [week]);
 
-  const conflicts = useMemo(() => validateWeek(week, ROSTER).conflicts, [week]);
+  const conflicts = useMemo(
+    () => validateWeek(week, roster).conflicts,
+    [week, roster],
+  );
 
   const onAssign = (day: DayOfWeek, slot: Slot, sisterId: string) => {
     setWeek((w) => {
@@ -127,18 +139,40 @@ export function App() {
       const existing = w.assignments.find((a) => a.day === day && a.slot === slot);
       const replaced = existing
         ? w.assignments.map((a) =>
-            a === existing ? { ...a, sisterIds: [sisterId] } : a,
+            a === existing
+              ? {
+                  ...a,
+                  sisterIds: [sisterId],
+                  // Drop any honey-job map entries that no longer apply.
+                  honeyJobs: a.honeyJobs?.[sisterId]
+                    ? { [sisterId]: a.honeyJobs[sisterId] }
+                    : undefined,
+                }
+              : a,
           )
         : [...w.assignments, { day, slot, sisterIds: [sisterId] }];
       return { ...w, assignments: replaced, dismissals: dropClearAllDismissals(w.dismissals, day, slot) };
     });
   };
 
-  const onSetHoneyJob = (day: DayOfWeek, job: HoneyJob | null) => {
+  const onSetHoneyJobForSister = (
+    day: DayOfWeek,
+    sisterId: string,
+    job: HoneyJob | null,
+  ) => {
     setWeek((w) => {
       const existing = w.assignments.find((a) => a.day === day && a.slot === 'honey');
       if (!existing) return w;
-      const updated = { ...existing, honeyJob: job ?? undefined };
+      const nextJobs = { ...(existing.honeyJobs ?? {}) };
+      if (job === null) {
+        delete nextJobs[sisterId];
+      } else {
+        nextJobs[sisterId] = job;
+      }
+      const updated = {
+        ...existing,
+        honeyJobs: Object.keys(nextJobs).length ? nextJobs : undefined,
+      };
       return {
         ...w,
         assignments: w.assignments.map((a) => (a === existing ? updated : a)),
@@ -150,11 +184,17 @@ export function App() {
   const onUnassign = (day: DayOfWeek, slot: Slot, sisterId: string) => {
     setWeek((w) => {
       const next = w.assignments
-        .map((a) =>
-          a.day === day && a.slot === slot
-            ? { ...a, sisterIds: a.sisterIds.filter((id) => id !== sisterId) }
-            : a,
-        )
+        .map((a) => {
+          if (!(a.day === day && a.slot === slot)) return a;
+          const nextJobs = a.honeyJobs ? { ...a.honeyJobs } : undefined;
+          if (nextJobs) delete nextJobs[sisterId];
+          return {
+            ...a,
+            sisterIds: a.sisterIds.filter((id) => id !== sisterId),
+            honeyJobs:
+              nextJobs && Object.keys(nextJobs).length ? nextJobs : undefined,
+          };
+        })
         .filter((a) => a.sisterIds.length > 0 || a.note);
       return { ...w, assignments: next, dismissals: dropClearAllDismissals(w.dismissals, day, slot) };
     });
@@ -315,7 +355,7 @@ export function App() {
     // she just told us she wants a blank canvas. As she fills cells, these dismissals
     // either become irrelevant (the conflict goes away) or stay quietly suppressed.
     const presetDismissals: Record<string, string> = {};
-    for (const c of validateWeek(blank, ROSTER).conflicts) {
+    for (const c of validateWeek(blank, roster).conflicts) {
       presetDismissals[c.key] = CLEAR_ALL_NOTE;
     }
     setWeek({ ...blank, dismissals: presetDismissals });
@@ -331,10 +371,20 @@ export function App() {
     });
   };
 
+  const onSaveRoster = (next: Sister[]) => {
+    saveActiveRoster(next);
+    setRoster([...ROSTER]); // ROSTER is mutated in place by saveActiveRoster
+    setShowRosterEditor(false);
+    // Selected sister may have been removed.
+    if (selectedSisterId && !next.some((s) => s.id === selectedSisterId)) {
+      setSelectedSisterId(null);
+    }
+  };
+
   return (
     <div className="app">
       <WeekHeader week={week} conflicts={conflicts} onWeekOfChange={switchToWeek} />
-      <ContextStrip week={week} roster={ROSTER} onUpdateWeek={(w) => setWeek(w)} />
+      <ContextStrip week={week} roster={roster} onUpdateWeek={(w) => setWeek(w)} />
       <ConflictList
         conflicts={conflicts}
         week={week}
@@ -375,11 +425,11 @@ export function App() {
           onDismissConflict={onDismissConflict}
           onCellNotePrompt={onCellNotePrompt}
           onClearCellNote={onClearCellNote}
-          onSetHoneyJob={onSetHoneyJob}
+          onSetHoneyJobForSister={onSetHoneyJobForSister}
           onEmptyCellClick={() => flashHint('Pick a sister on the right, then click a cell.')}
         />
         <SisterPalette
-          roster={ROSTER}
+          roster={roster}
           week={week}
           selectedSisterId={selectedSisterId}
           onSelectSister={setSelectedSisterId}
@@ -390,6 +440,7 @@ export function App() {
           onExportStandingPattern={onExportStandingPattern}
           onImportStandingPattern={onImportStandingPattern}
           onShowTour={openTour}
+          onManageRoster={() => setShowRosterEditor(true)}
           standingSavedAt={standingSavedAt}
         />
       </div>
@@ -416,6 +467,14 @@ export function App() {
           initial={notePrompt.current}
           onSubmit={submitNote}
           onCancel={() => setNotePrompt(null)}
+        />
+      )}
+
+      {showRosterEditor && (
+        <RosterEditor
+          initial={roster}
+          onSave={onSaveRoster}
+          onCancel={() => setShowRosterEditor(false)}
         />
       )}
 

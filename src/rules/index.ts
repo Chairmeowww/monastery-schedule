@@ -5,6 +5,7 @@ import {
   type Assignment,
   type Conflict,
   type DayOfWeek,
+  type HoneyJob,
   type Sister,
   type Slot,
   type ValidationResult,
@@ -115,14 +116,25 @@ export function R4_annette(week: Week): Conflict[] {
 
 /** R5. Each table-able sister serves table once/week.
  *  Suz is the brief's sanctioned exception ("I fill in where this is not possible") — silent.
+ *  Sanctioned exception: a sister who is the day-of-solitude dinner cook is also that day's
+ *  table server (R23 / Suz's note). That table day doesn't count toward her weekly cap.
  *  Warning surfaces on each table cell where the over-assigned sister appears.
  */
 export function R5_tableFrequency(week: Week): Conflict[] {
   const c: Conflict[] = [];
   const counts: Record<string, number> = {};
+  const dosDinnerCooks: Set<string> = new Set(
+    week.daySolitude
+      ? sistersInSlot(week, week.daySolitude, 'dinner')
+      : [],
+  );
   for (const a of week.assignments) {
     if (a.slot !== 'table') continue;
-    for (const id of a.sisterIds) counts[id] = (counts[id] ?? 0) + 1;
+    for (const id of a.sisterIds) {
+      // Discount the DoS table day for sisters who are also that day's dinner cook.
+      if (a.day === week.daySolitude && dosDinnerCooks.has(id)) continue;
+      counts[id] = (counts[id] ?? 0) + 1;
+    }
   }
   for (const [id, n] of Object.entries(counts)) {
     if (n <= 1) continue;
@@ -130,6 +142,8 @@ export function R5_tableFrequency(week: Week): Conflict[] {
     const message = `${NAME(id)} is on table service ${n}× this week (usually once).`;
     for (const a of week.assignments) {
       if (a.slot !== 'table' || !a.sisterIds.includes(id)) continue;
+      // Don't flag the discounted DoS day either — it's the sanctioned pair.
+      if (a.day === week.daySolitude && dosDinnerCooks.has(id)) continue;
       c.push({
         rule: 'R5',
         severity: 'soft',
@@ -160,17 +174,21 @@ export function R6_angelaJonahCook(week: Week): Conflict[] {
   }));
 }
 
-/** R7. Annette never makes soup; never assigned to a soup day's supper. */
+/** R7. Annette never makes soup; never assigned to a soup day's soup-bearing meal.
+ *  On Sunday the soup-bearing meal is Lunch (`dinner` slot, noon — soup + cheese).
+ *  Mon–Sat the soup-bearing meal is Supper. */
 export function R7_annetteSoup(week: Week): Conflict[] {
   const c: Conflict[] = [];
   for (const day of week.soupDays) {
-    if (sistersInSlot(week, day, 'supper').includes('annette')) {
+    const soupSlot: Slot = day === 'sun' ? 'dinner' : 'supper';
+    const soupSlotLabel = day === 'sun' ? 'Sunday Lunch' : 'supper';
+    if (sistersInSlot(week, day, soupSlot).includes('annette')) {
       c.push({
         rule: 'R7',
         severity: 'hard',
-        message: 'Annette is on supper on a soup day — Annette does not make soup.',
-        scope: { kind: 'cell', day, slot: 'supper' },
-        key: cellKey(day, 'supper', 'R7'),
+        message: `Annette is on ${soupSlotLabel} on a soup day — Annette does not make soup.`,
+        scope: { kind: 'cell', day, slot: soupSlot },
+        key: cellKey(day, soupSlot, 'R7'),
       });
     }
   }
@@ -216,20 +234,23 @@ export function R9_soupDayPreferred(week: Week): Conflict[] {
   return c;
 }
 
-/** R10. On every soup day, the supper cook must be in the soup-makers set. */
+/** R10. On every soup day, the soup-bearing meal's cook must be in the soup-makers set.
+ *  On Sunday that meal is Lunch (`dinner` slot — noon, soup + cheese). Mon–Sat it's Supper. */
 export function R10_soupMaker(week: Week): Conflict[] {
   const c: Conflict[] = [];
   for (const day of week.soupDays) {
-    const supperCooks = sistersInSlot(week, day, 'supper');
-    if (supperCooks.length === 0) continue; // R8 / cell-empty handles this
-    for (const id of supperCooks) {
+    const soupSlot: Slot = day === 'sun' ? 'dinner' : 'supper';
+    const soupSlotLabel = day === 'sun' ? 'Lunch' : 'supper';
+    const cooks = sistersInSlot(week, day, soupSlot);
+    if (cooks.length === 0) continue; // R8 / cell-empty handles this
+    for (const id of cooks) {
       if (!SOUP_MAKERS.includes(id)) {
         c.push({
           rule: 'R10',
           severity: 'hard',
-          message: `${NAME(id)} is on supper on a soup day but isn't a soup maker.`,
-          scope: { kind: 'cell', day, slot: 'supper' },
-          key: cellKey(day, 'supper', 'R10', id),
+          message: `${NAME(id)} is on ${soupSlotLabel} on a soup day but isn't a soup maker.`,
+          scope: { kind: 'cell', day, slot: soupSlot },
+          key: cellKey(day, soupSlot, 'R10', id),
         });
       }
     }
@@ -473,19 +494,28 @@ export function R18_honey(week: Week): Conflict[] {
     });
   }
 
+  const allHoneyCrew = [
+    ...HONEY_MIX_ONLY,
+    ...HONEY_FILL,
+    ...HONEY_LABELS,
+    ...HONEY_LIDS,
+    ...HONEY_FILL_EMERGENCY,
+  ];
+  const allowedForJob: Record<HoneyJob, string[]> = {
+    Mix: HONEY_MIX_ONLY,
+    Fill: [...HONEY_FILL, ...HONEY_FILL_EMERGENCY],
+    Labels: HONEY_LABELS,
+    Lids: HONEY_LIDS,
+  };
+
   for (const a of honey) {
-    // If no honey job is picked, fall back to "is this person on the honey crew at all" check
-    // and a soft nudge to pick a job so we can validate properly.
-    if (!a.honeyJob) {
-      const allValid = [
-        ...HONEY_MIX_ONLY,
-        ...HONEY_FILL,
-        ...HONEY_LABELS,
-        ...HONEY_LIDS,
-        ...HONEY_FILL_EMERGENCY,
-      ];
-      for (const id of a.sisterIds) {
-        if (!allValid.includes(id)) {
+    const jobs = a.honeyJobs ?? {};
+    const sistersWithoutJob: string[] = [];
+    for (const id of a.sisterIds) {
+      const job = jobs[id];
+      if (!job) {
+        sistersWithoutJob.push(id);
+        if (!allHoneyCrew.includes(id)) {
           c.push({
             rule: 'R18',
             severity: 'hard',
@@ -494,28 +524,8 @@ export function R18_honey(week: Week): Conflict[] {
             key: cellKey(a.day, 'honey', 'R18', `bad-${id}`),
           });
         }
+        continue;
       }
-      if (a.sisterIds.length > 0) {
-        c.push({
-          rule: 'R18',
-          severity: 'soft',
-          message: 'Pick which honey job (Mix / Fill / Labels / Lids) so it can be validated.',
-          scope: { kind: 'cell', day: a.day, slot: 'honey' },
-          key: cellKey(a.day, 'honey', 'R18', 'job-unset'),
-        });
-      }
-      continue;
-    }
-
-    // honeyJob is set — validate each sister against that job's ability list.
-    const job = a.honeyJob;
-    const allowedForJob: Record<typeof job, string[]> = {
-      Mix: HONEY_MIX_ONLY,
-      Fill: [...HONEY_FILL, ...HONEY_FILL_EMERGENCY],
-      Labels: HONEY_LABELS,
-      Lids: HONEY_LIDS,
-    };
-    for (const id of a.sisterIds) {
       if (!allowedForJob[job].includes(id)) {
         c.push({
           rule: 'R18',
@@ -544,6 +554,21 @@ export function R18_honey(week: Week): Conflict[] {
           key: cellKey(a.day, 'honey', 'R18', 'claire-fill-emergency'),
         });
       }
+    }
+
+    // Two or more sisters in the same job (e.g. two Fillers) is the user's call —
+    // that's how a four-person crew gets two people on labels — so we don't warn.
+    // But a sister in the cell with no job picked is something Suz needs to fix.
+    if (sistersWithoutJob.length > 0) {
+      const names = sistersWithoutJob.map(NAME).join(', ');
+      const verb = sistersWithoutJob.length === 1 ? 'is' : 'are';
+      c.push({
+        rule: 'R18',
+        severity: 'soft',
+        message: `${names} ${verb} on the honey crew — pick a job (Mix / Fill / Labels / Lids).`,
+        scope: { kind: 'cell', day: a.day, slot: 'honey' },
+        key: cellKey(a.day, 'honey', 'R18', `job-unset-${sistersWithoutJob.join('-')}`),
+      });
     }
   }
   return c;
@@ -723,7 +748,14 @@ export function R23_dosCookAlsoTable(week: Week): Conflict[] {
   return c;
 }
 
-/** R22. No sister appears in two job slots on the same day. (The flagship rule.) */
+/** R22. No sister appears in two job slots on the same day. (The flagship rule.)
+ *
+ *  Sanctioned exception: on the day of solitude, the dinner cook is *expected* to also
+ *  be that day's table server (R23 — Suz: "Sometimes a sister is twice a week if they
+ *  are day of solitude cook. That is the rule."). When the day's two slots are exactly
+ *  {dinner, table} and that pair matches R23, R22 stays silent. Three or more slots on
+ *  one day still flag.
+ */
 export function R22_sameDayDouble(week: Week): Conflict[] {
   const c: Conflict[] = [];
   const seenKeys = new Set<string>();
@@ -739,7 +771,13 @@ export function R22_sameDayDouble(week: Week): Conflict[] {
   for (const [k, slots] of Object.entries(byDaySister)) {
     if (slots.size <= 1) continue;
     const [day, id] = k.split('::') as [DayOfWeek, string];
-    // Allowed combo exception: appointment-driver pair is handled by R21; honey + other isn't allowed either.
+    // Day-of-solitude dinner-cook is also that day's table server — sanctioned by R23.
+    const isDosCookTablePair =
+      week.daySolitude === day &&
+      slots.size === 2 &&
+      slots.has('dinner') &&
+      slots.has('table');
+    if (isDosCookTablePair) continue;
     for (const slot of slots) {
       const slotTyped = slot as Slot;
       const dedup = `R22::${day}::${id}::${slotTyped}`;

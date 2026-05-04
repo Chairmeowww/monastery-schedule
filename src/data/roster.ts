@@ -1,10 +1,16 @@
 import type { Sister } from '../types';
 
 /**
- * Inferred from the brief's rules. Confirm with Suz before treating as canonical.
- * Notes that are surfaced in the UI as restrictions live in `restrictions`.
+ * Seed roster from the brief's rules. The live roster (with Suz's edits/additions)
+ * is held in localStorage by `rosterStore.ts`; on load it overwrites `ROSTER` and
+ * `SISTER_BY_ID` in place so the rules engine continues to read the current names.
+ *
+ * Sister-specific rule constants below (HONEY_FILL, SOUP_MAKERS, etc.) reference the
+ * original 9 sisters' IDs. Newly added sisters do NOT inherit these specialized rules
+ * — they show up in the palette and pass R24 by their listed abilities, which is the
+ * conservative default. Suz can layer rules onto a new sister later if she ever wants.
  */
-export const ROSTER: Sister[] = [
+export const SEED_ROSTER: Sister[] = [
   {
     id: 'suz',
     name: 'Suz',
@@ -101,9 +107,37 @@ export const ROSTER: Sister[] = [
   },
 ];
 
+/**
+ * Live roster — starts as a copy of SEED_ROSTER and is replaced in place by
+ * `rosterStore.setActiveRoster()` whenever Suz edits the sisters list. The rules
+ * engine reads through `SISTER_BY_ID` (also kept in sync), so renames and additions
+ * flow through to warning text and ability checks without re-importing.
+ */
+export const ROSTER: Sister[] = SEED_ROSTER.map((s) => ({
+  ...s,
+  abilities: [...s.abilities],
+  restrictions: [...s.restrictions],
+}));
+
 export const SISTER_BY_ID: Record<string, Sister> = Object.fromEntries(
   ROSTER.map((s) => [s.id, s]),
 );
+
+/** Replace the live ROSTER and SISTER_BY_ID in place. Called by the roster store
+ *  on initial load and after every save. Mutating in place (instead of re-exporting)
+ *  means modules that imported these earlier still see the current state. */
+export function applyActiveRoster(roster: Sister[]): void {
+  ROSTER.length = 0;
+  for (const s of roster) {
+    ROSTER.push({
+      ...s,
+      abilities: [...s.abilities],
+      restrictions: [...s.restrictions],
+    });
+  }
+  for (const k of Object.keys(SISTER_BY_ID)) delete SISTER_BY_ID[k];
+  for (const s of ROSTER) SISTER_BY_ID[s.id] = s;
+}
 
 /** Sisters who can be the helper for Victoria's cook days (R11). */
 export const VICTORIA_HELPERS = ['angela_jonah', 'karen', 'ann_marie', 'claire'];

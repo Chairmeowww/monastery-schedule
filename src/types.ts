@@ -12,6 +12,7 @@ export type Ability =
   | 'garden'
   | 'laundry'
   | 'ironing'
+  | 'cleaning'
   | 'driver';
 
 export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
@@ -48,6 +49,7 @@ export type Slot =
   | 'ironing'
   | 'garden'
   | 'honey'
+  | 'cleaning'
   | 'driver';
 
 export const SLOTS: Slot[] = [
@@ -60,6 +62,7 @@ export const SLOTS: Slot[] = [
   'ironing',
   'garden',
   'honey',
+  'cleaning',
   'driver',
 ];
 
@@ -73,8 +76,16 @@ export const SLOT_LABEL: Record<Slot, string> = {
   ironing: 'Ironing',
   garden: 'Garden',
   honey: 'Honey',
+  cleaning: 'Cleaning',
   driver: 'Driver',
 };
+
+/** Slot label as Suz reads it on Sunday — Lunch (noon, soup+cheese) and Main Meal (evening). */
+export function slotLabelForDay(slot: Slot, day: DayOfWeek): string {
+  if (day === 'sun' && slot === 'dinner') return 'Lunch';
+  if (day === 'sun' && slot === 'supper') return 'Main Meal';
+  return SLOT_LABEL[slot];
+}
 
 export type Sister = {
   id: string;
@@ -92,7 +103,9 @@ export type Assignment = {
   slot: Slot;
   sisterIds: string[];
   note?: string;
-  /** For honey cells only. Tells the rules engine which honey job is being done so it can validate per-role. */
+  /** Honey crew: each sister's specific job within the crew (Mix/Fill/Labels/Lids). */
+  honeyJobs?: Record<string, HoneyJob>;
+  /** @deprecated single-job legacy field; migrated to honeyJobs at load. */
   honeyJob?: HoneyJob;
 };
 

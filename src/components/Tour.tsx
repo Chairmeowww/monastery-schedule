@@ -17,7 +17,13 @@ const STEPS: Step[] = [
     target: '.palette',
     title: 'The sisters',
     body:
-      'These nine names are the sisters. To assign one to a duty: click her name on the right, then click a cell. To remove her, click her name inside the cell. To add a second sister to the same cell (Victoria + a helper, etc.), hold Shift while clicking.',
+      'These names are the sisters. To assign one: click her name on the right, then click a cell. To remove her, click her name inside the cell. To add a SECOND sister to the same cell — Doctor trips with two riders, a four-person honey crew, a cleaning team — click the small "+ add" button that appears in the cell, or hold Shift and click. Use "Manage sisters" to add new people or rename someone.',
+  },
+  {
+    target: '.grid',
+    title: 'Honey crew, doctor trips, cleaning teams',
+    body:
+      'Cells can hold more than one person. For honey: assign 2–4 sisters to a single Honey cell, then click "pick job" next to each chip and choose Mix / Fill / Labels / Lids — every sister gets her own job within the crew. Same flow for Cleaning, or for grouping doctor appointments.',
   },
   {
     target: '.context-strip',

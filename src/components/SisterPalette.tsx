@@ -14,6 +14,7 @@ type Props = {
   onExportStandingPattern: () => void;
   onImportStandingPattern: (file: File) => void;
   onShowTour: () => void;
+  onManageRoster: () => void;
   /** ISO timestamp of the most recent "Set as default", or null if never customized. */
   standingSavedAt: string | null;
 };
@@ -30,6 +31,7 @@ export function SisterPalette({
   onExportStandingPattern,
   onImportStandingPattern,
   onShowTour,
+  onManageRoster,
   standingSavedAt,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,9 +63,13 @@ export function SisterPalette({
         ))}
       </div>
       <p className="help">
-        Click a sister, then click a cell to assign her. Click an assigned chip in a cell to remove
-        her.
+        Click a sister, then click a cell to assign her. To add a second sister to the same cell,
+        click <em>+ add</em> when it appears, or hold <kbd>Shift</kbd> and click. Click an assigned
+        chip to remove her.
       </p>
+      <button type="button" className="manage-roster link-btn" onClick={onManageRoster}>
+        Manage sisters →
+      </button>
       <div className="palette-actions">
         <button onClick={onPrint}>Print schedule</button>
         <button onClick={onShowTour}>Show tour</button>

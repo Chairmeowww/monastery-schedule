@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { HONEY_JOBS, type Conflict, type DayOfWeek, type HoneyJob, type Sister, type Slot } from '../types';
+import {
+  HONEY_JOBS,
+  slotLabelForDay,
+  type Conflict,
+  type DayOfWeek,
+  type HoneyJob,
+  type Sister,
+  type Slot,
+} from '../types';
 import { SisterChip } from './SisterChip';
 
 type Props = {
@@ -7,7 +15,7 @@ type Props = {
   slot: Slot;
   sisterIds: string[];
   note?: string;
-  honeyJob?: HoneyJob;
+  honeyJobs?: Record<string, HoneyJob>;
   conflicts: Conflict[];
   dismissals: Record<string, string>;
   rosterById: Record<string, Sister>;
@@ -21,7 +29,7 @@ type Props = {
   onDismissConflict: (key: string) => void;
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
   onClearCellNote?: (day: DayOfWeek, slot: Slot) => void;
-  onSetHoneyJob?: (day: DayOfWeek, job: HoneyJob | null) => void;
+  onSetHoneyJobForSister?: (day: DayOfWeek, sisterId: string, job: HoneyJob | null) => void;
   onEmptyCellClick?: () => void;
 };
 
@@ -30,7 +38,7 @@ export function Cell({
   slot,
   sisterIds,
   note,
-  honeyJob,
+  honeyJobs,
   conflicts,
   dismissals,
   rosterById,
@@ -44,10 +52,10 @@ export function Cell({
   onDismissConflict,
   onCellNotePrompt,
   onClearCellNote,
-  onSetHoneyJob,
+  onSetHoneyJobForSister,
   onEmptyCellClick,
 }: Props) {
-  const [honeyPickerOpen, setHoneyPickerOpen] = useState(false);
+  const [pickerOpenFor, setPickerOpenFor] = useState<string | null>(null);
   const hasHard = conflicts.some((c) => c.severity === 'hard' && !dismissals[c.key]);
   const hasSoft =
     !hasHard && conflicts.some((c) => c.severity === 'soft' && !dismissals[c.key]);
@@ -67,6 +75,8 @@ export function Cell({
   const handleCellClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('.chip')) return;
+    if (target.closest('.honey-job')) return;
+    if (target.closest('.add-another')) return;
     // When no sister is being placed, the conflict span owns its own click (toggle dismissal).
     // When a sister IS selected, conflict text must not block placement — let it through.
     if (!selectedSisterId) {
@@ -91,6 +101,12 @@ export function Cell({
     onCellNotePrompt(day, slot);
   };
 
+  // Sunday Lunch / Main Meal label inside the cell (data slot remains dinner/supper).
+  const sundayMealCaption =
+    day === 'sun' && (slot === 'dinner' || slot === 'supper')
+      ? slotLabelForDay(slot, day)
+      : null;
+
   return (
     <div
       className={cls}
@@ -100,20 +116,83 @@ export function Cell({
       onContextMenu={handleContextMenu}
       title={selectedSisterId ? 'Click to assign here' : 'Right-click to add a note'}
     >
+      {sundayMealCaption && <span className="sunday-meal-caption">{sundayMealCaption}</span>}
       <div className="chips">
         {sisterIds.map((id) => {
           const s = rosterById[id];
           if (!s) return null;
+          const job = slot === 'honey' ? honeyJobs?.[id] : undefined;
           return (
-            <SisterChip
-              key={id}
-              sister={s}
-              assignedHere
-              tip="Click to remove"
-              onClick={() => onUnassign(day, slot, id)}
-            />
+            <span key={id} className="chip-with-job">
+              <SisterChip
+                sister={s}
+                assignedHere
+                tip="Click to remove"
+                onClick={() => onUnassign(day, slot, id)}
+              />
+              {slot === 'honey' && onSetHoneyJobForSister && (
+                <span className="honey-job" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className={`honey-job-trigger ${job ? 'set' : 'unset'}`}
+                    onClick={() =>
+                      setPickerOpenFor((cur) => (cur === id ? null : id))
+                    }
+                    title="Pick this sister's honey job"
+                  >
+                    {job ?? 'pick job'}
+                  </button>
+                  {pickerOpenFor === id && (
+                    <div className="honey-job-picker">
+                      {HONEY_JOBS.map((j) => (
+                        <button
+                          key={j}
+                          type="button"
+                          className={job === j ? 'selected' : ''}
+                          onClick={() => {
+                            onSetHoneyJobForSister(day, id, j);
+                            setPickerOpenFor(null);
+                          }}
+                        >
+                          {j}
+                        </button>
+                      ))}
+                      {job && (
+                        <button
+                          type="button"
+                          className="clear"
+                          onClick={() => {
+                            onSetHoneyJobForSister(day, id, null);
+                            setPickerOpenFor(null);
+                          }}
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </span>
+              )}
+            </span>
           );
         })}
+        {/* Visible "add another" affordance — shown when a sister is selected and the
+            cell already has someone. Discoverable replacement for shift-click. */}
+        {selectedSisterId &&
+          sisterIds.length > 0 &&
+          !sisterIds.includes(selectedSisterId) && (
+            <button
+              type="button"
+              className="add-another no-print"
+              title="Add this sister alongside the others"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAssign(day, slot, selectedSisterId);
+              }}
+            >
+              + add {rosterById[selectedSisterId]?.name ?? ''}
+            </button>
+          )}
       </div>
       {note && (
         <span className="cell-note">
@@ -133,47 +212,6 @@ export function Cell({
             </button>
           )}
         </span>
-      )}
-      {slot === 'honey' && sisterIds.length > 0 && onSetHoneyJob && (
-        <div className="honey-job no-print" onClick={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            className={`honey-job-trigger ${honeyJob ? 'set' : 'unset'}`}
-            onClick={() => setHoneyPickerOpen((v) => !v)}
-            title="Pick which honey job"
-          >
-            {honeyJob ? `Job: ${honeyJob}` : 'Pick job'}
-          </button>
-          {honeyPickerOpen && (
-            <div className="honey-job-picker">
-              {HONEY_JOBS.map((j) => (
-                <button
-                  key={j}
-                  type="button"
-                  className={honeyJob === j ? 'selected' : ''}
-                  onClick={() => {
-                    onSetHoneyJob(day, j);
-                    setHoneyPickerOpen(false);
-                  }}
-                >
-                  {j}
-                </button>
-              ))}
-              {honeyJob && (
-                <button
-                  type="button"
-                  className="clear"
-                  onClick={() => {
-                    onSetHoneyJob(day, null);
-                    setHoneyPickerOpen(false);
-                  }}
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          )}
-        </div>
       )}
       {conflicts.map((c) => {
         // Dismissed conflicts stay accessible in the top "Show all conflicts and warnings" panel,

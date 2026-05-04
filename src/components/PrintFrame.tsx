@@ -5,6 +5,7 @@ import {
   SLOTS,
   SLOT_LABEL,
   type Sister,
+  type Slot,
   type Week,
 } from '../types';
 import { fromISODate } from '../data/defaults';
@@ -65,7 +66,7 @@ function PrintRow({
   week,
   rosterById,
 }: {
-  slot: Week['assignments'][number]['slot'];
+  slot: Slot;
   week: Week;
   rosterById: Record<string, Sister>;
 }) {
@@ -75,21 +76,33 @@ function PrintRow({
       {DAYS.map((day) => {
         const a = week.assignments.find((x) => x.day === day && x.slot === slot);
         const ids = a?.sisterIds ?? [];
+        const sundayCaption =
+          day === 'sun' && slot === 'dinner'
+            ? 'Lunch'
+            : day === 'sun' && slot === 'supper'
+              ? 'Main Meal'
+              : null;
         return (
           <div
             key={day}
             className={`cell ${day === 'sun' ? 'sunday-divider' : ''} ${day === 'sun' ? 'last' : ''}`}
           >
+            {sundayCaption && (
+              <span style={{ fontSize: '7pt', color: 'var(--muted)', display: 'block', fontVariant: 'small-caps', letterSpacing: '0.06em' }}>
+                {sundayCaption}
+              </span>
+            )}
             {ids.length === 0 ? (
               <span style={{ color: 'var(--hair)' }}>·</span>
             ) : (
               <span style={{ fontStyle: 'italic' }}>
-                {ids.map((id) => rosterById[id]?.name ?? id).join(' · ')}
-              </span>
-            )}
-            {a?.honeyJob && (
-              <span style={{ fontSize: '8pt', color: 'var(--muted)', display: 'block' }}>
-                {a.honeyJob}
+                {ids
+                  .map((id) => {
+                    const name = rosterById[id]?.name ?? id;
+                    const job = a?.honeyJobs?.[id];
+                    return job ? `${name} (${job})` : name;
+                  })
+                  .join(' · ')}
               </span>
             )}
             {a?.note && (
