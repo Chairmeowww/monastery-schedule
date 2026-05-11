@@ -181,6 +181,22 @@ export function App() {
     });
   };
 
+  /** Cycle this cell's period: undefined (all day) → 'am' → 'pm' → undefined. */
+  const onCyclePeriod = (day: DayOfWeek, slot: Slot) => {
+    setWeek((w) => {
+      const existing = w.assignments.find((a) => a.day === day && a.slot === slot);
+      if (!existing) return w;
+      const next = existing.period === undefined ? 'am' : existing.period === 'am' ? 'pm' : undefined;
+      return {
+        ...w,
+        assignments: w.assignments.map((a) =>
+          a === existing ? { ...a, period: next } : a,
+        ),
+        dismissals: dropClearAllDismissals(w.dismissals, day, slot),
+      };
+    });
+  };
+
   const onUnassign = (day: DayOfWeek, slot: Slot, sisterId: string) => {
     setWeek((w) => {
       const next = w.assignments
@@ -426,6 +442,7 @@ export function App() {
           onCellNotePrompt={onCellNotePrompt}
           onClearCellNote={onClearCellNote}
           onSetHoneyJobForSister={onSetHoneyJobForSister}
+          onCyclePeriod={onCyclePeriod}
           onEmptyCellClick={() => flashHint('Pick a sister on the right, then click a cell.')}
         />
         <SisterPalette

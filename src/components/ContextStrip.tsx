@@ -65,7 +65,9 @@ export function ContextStrip({ week, roster, onUpdateWeek }: Props) {
 
       <div className="field appointments-field">
         <span className="label">Appointments</span>
-        <span className="hint">doctor visits — clears that day’s duties</span>
+        <span className="hint">
+          doctor visits — clears that day’s duties. Pick All-day (Eureka / Santa Rosa) or AM (Redway / Garberville) so PM work can still be scheduled.
+        </span>
         <div className="appointments-row">
           {DAYS.map((day) => {
             const idx = week.appointments.findIndex((a) => a.day === day);
@@ -92,6 +94,21 @@ export function ContextStrip({ week, roster, onUpdateWeek }: Props) {
                       className="appt-type"
                       placeholder="type"
                     />
+                    <select
+                      value={appt.period ?? 'allday'}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        updateAppointment(idx, {
+                          period: v === 'am' ? 'am' : v === 'pm' ? 'pm' : undefined,
+                        });
+                      }}
+                      className="appt-period"
+                      title="When does it run? All-day (far trip) or AM/PM (closer)"
+                    >
+                      <option value="allday">All day</option>
+                      <option value="am">AM only</option>
+                      <option value="pm">PM only</option>
+                    </select>
                     <button
                       onClick={() => removeAppointment(idx)}
                       aria-label="Remove appointment"

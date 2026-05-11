@@ -21,15 +21,21 @@ const STEPS: Step[] = [
   },
   {
     target: '.grid',
-    title: 'Honey crew, doctor trips, cleaning teams',
+    title: 'Honey crew, cleaning, library, meetings',
     body:
-      'Cells can hold more than one person. For honey: assign 2–4 sisters to a single Honey cell, then click "pick job" next to each chip and choose Mix / Fill / Labels / Lids — every sister gets her own job within the crew. Same flow for Cleaning, or for grouping doctor appointments.',
+      'Cells can hold more than one person. For honey: assign 2–4 sisters and pick each one\'s job (Mix / Fill / Labels / Lids) next to her chip. For Cleaning, Library, or Meetings — same flow, multiple sisters per cell. To say WHICH area is being cleaned (chapel, kitchen, refectory…), right-click the cell and add a note — it prints on the schedule.',
+  },
+  {
+    target: '.grid',
+    title: 'AM, PM, or all day',
+    body:
+      'Under every filled cell there\'s a small "all day" / AM / PM toggle. Click to cycle. Use it when afternoon work is flexible, or when a doctor trip is morning-only (Redway / Garberville) and the sister can still work that PM. Cook + table on the same day is now expected, not flagged.',
   },
   {
     target: '.context-strip',
     title: 'Day of solitude, soup, appointments',
     body:
-      'Above the grid: set the quiet day for this week, mark soup days, and add doctor appointments by clicking the + on the day. Appointments clear that day’s other duties.',
+      'Above the grid: set the quiet day for this week, mark soup days, and add doctor appointments by clicking the + on the day. Each appointment lets you pick All-day (Eureka / Santa Rosa) or AM-only (Redway / Garberville) so PM work isn\'t accidentally cleared.',
   },
   {
     target: '.conflict-summary',

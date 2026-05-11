@@ -24,6 +24,7 @@ type Props = {
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
   onClearCellNote: (day: DayOfWeek, slot: Slot) => void;
   onSetHoneyJobForSister: (day: DayOfWeek, sisterId: string, job: HoneyJob | null) => void;
+  onCyclePeriod: (day: DayOfWeek, slot: Slot) => void;
   onEmptyCellClick?: () => void;
 };
 
@@ -40,7 +41,8 @@ function dayAppointmentsLabel(d: DayOfWeek, week: Week, rosterById: Record<strin
     .map((a) => {
       const name = rosterById[a.sisterId]?.name ?? a.sisterId;
       const type = a.type ? a.type : 'appt';
-      return `${name} · ${type}`;
+      const periodTag = a.period ? ` (${a.period.toUpperCase()})` : '';
+      return `${name} · ${type}${periodTag}`;
     })
     .join(', ');
 }
@@ -57,6 +59,7 @@ export function Grid({
   onCellNotePrompt,
   onClearCellNote,
   onSetHoneyJobForSister,
+  onCyclePeriod,
   onEmptyCellClick,
 }: Props) {
   const cellConflicts = (day: DayOfWeek, slot: Slot) =>
@@ -99,6 +102,7 @@ export function Grid({
           onCellNotePrompt={onCellNotePrompt}
           onClearCellNote={onClearCellNote}
           onSetHoneyJobForSister={onSetHoneyJobForSister}
+          onCyclePeriod={onCyclePeriod}
           onEmptyCellClick={onEmptyCellClick}
         />
       ))}
@@ -119,6 +123,7 @@ function SlotRow({
   onCellNotePrompt,
   onClearCellNote,
   onSetHoneyJobForSister,
+  onCyclePeriod,
   onEmptyCellClick,
 }: {
   slot: Slot;
@@ -133,6 +138,7 @@ function SlotRow({
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
   onClearCellNote: (day: DayOfWeek, slot: Slot) => void;
   onSetHoneyJobForSister: (day: DayOfWeek, sisterId: string, job: HoneyJob | null) => void;
+  onCyclePeriod: (day: DayOfWeek, slot: Slot) => void;
   onEmptyCellClick?: () => void;
 }) {
   return (
@@ -148,6 +154,7 @@ function SlotRow({
             sisterIds={a?.sisterIds ?? []}
             note={a?.note}
             honeyJobs={a?.honeyJobs}
+            period={a?.period}
             conflicts={cellConflicts(day, slot)}
             dismissals={week.dismissals}
             rosterById={rosterById}
@@ -161,6 +168,7 @@ function SlotRow({
             onCellNotePrompt={onCellNotePrompt}
             onClearCellNote={onClearCellNote}
             onSetHoneyJobForSister={onSetHoneyJobForSister}
+            onCyclePeriod={onCyclePeriod}
             onEmptyCellClick={onEmptyCellClick}
           />
         );

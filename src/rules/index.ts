@@ -123,16 +123,18 @@ export function R4_annette(week: Week): Conflict[] {
 export function R5_tableFrequency(week: Week): Conflict[] {
   const c: Conflict[] = [];
   const counts: Record<string, number> = {};
-  const dosDinnerCooks: Set<string> = new Set(
-    week.daySolitude
-      ? sistersInSlot(week, week.daySolitude, 'dinner')
-      : [],
-  );
+  // A table day doesn't count against the weekly cap if the sister is also
+  // cooking that day's dinner OR supper — that's a sanctioned same-day pair.
+  const isSanctionedTableDay = (day: DayOfWeek, sisterId: string): boolean => {
+    return (
+      sistersInSlot(week, day, 'dinner').includes(sisterId) ||
+      sistersInSlot(week, day, 'supper').includes(sisterId)
+    );
+  };
   for (const a of week.assignments) {
     if (a.slot !== 'table') continue;
     for (const id of a.sisterIds) {
-      // Discount the DoS table day for sisters who are also that day's dinner cook.
-      if (a.day === week.daySolitude && dosDinnerCooks.has(id)) continue;
+      if (isSanctionedTableDay(a.day, id)) continue;
       counts[id] = (counts[id] ?? 0) + 1;
     }
   }
@@ -142,8 +144,7 @@ export function R5_tableFrequency(week: Week): Conflict[] {
     const message = `${NAME(id)} is on table service ${n}× this week (usually once).`;
     for (const a of week.assignments) {
       if (a.slot !== 'table' || !a.sisterIds.includes(id)) continue;
-      // Don't flag the discounted DoS day either — it's the sanctioned pair.
-      if (a.day === week.daySolitude && dosDinnerCooks.has(id)) continue;
+      if (isSanctionedTableDay(a.day, id)) continue;
       c.push({
         rule: 'R5',
         severity: 'soft',
@@ -651,7 +652,12 @@ export function R20_driverForAppointment(week: Week): Conflict[] {
   return c;
 }
 
-/** R21. A sister with an appointment that day has no other duty that day. */
+/** R21. A sister with an appointment that day shouldn't be double-booked.
+ *  All-day appointment (default, e.g. Eureka/Santa Rosa trips) → flag any other duty that day.
+ *  AM-only (e.g. Redway/Garberville) → flag duties marked AM only; PM-marked duties are fine.
+ *  PM-only → mirror of AM.
+ *  When an unmarked duty overlaps a half-day appointment, surface a softer "is this AM or PM?"
+ *  reminder rather than a hard conflict — Suz's note: afternoon work is often flexible. */
 export function R21_appointmentClearsDay(week: Week): Conflict[] {
   const c: Conflict[] = [];
   for (const appt of week.appointments) {
@@ -659,12 +665,43 @@ export function R21_appointmentClearsDay(week: Week): Conflict[] {
       (a) => a.slot !== 'driver',
     );
     for (const a of others) {
+      const apptPeriod = appt.period;
+      const dutyPeriod = a.period;
+
+      // All-day appointment — current behavior, hard conflict on any other duty.
+      if (!apptPeriod) {
+        c.push({
+          rule: 'R21',
+          severity: 'hard',
+          message: `${NAME(appt.sisterId)} has an all-day appointment ${dayHuman(appt.day)} — no other duty that day.`,
+          scope: { kind: 'cell', day: a.day, slot: a.slot },
+          key: cellKey(a.day, a.slot, 'R21', appt.sisterId),
+        });
+        continue;
+      }
+
+      // Half-day appointment — flag only overlapping half.
+      if (dutyPeriod && dutyPeriod === apptPeriod) {
+        c.push({
+          rule: 'R21',
+          severity: 'hard',
+          message: `${NAME(appt.sisterId)} has a ${apptPeriod.toUpperCase()} appointment ${dayHuman(appt.day)} — clashes with this ${dutyPeriod.toUpperCase()} duty.`,
+          scope: { kind: 'cell', day: a.day, slot: a.slot },
+          key: cellKey(a.day, a.slot, 'R21', `${appt.sisterId}-${apptPeriod}`),
+        });
+        continue;
+      }
+
+      // Opposite half-days — explicitly fine, no conflict.
+      if (dutyPeriod && dutyPeriod !== apptPeriod) continue;
+
+      // Unmarked duty + half-day appointment — soft nudge: confirm which half.
       c.push({
         rule: 'R21',
-        severity: 'hard',
-        message: `${NAME(appt.sisterId)} has a doctor appointment ${dayHuman(appt.day)} — no other duty that day.`,
+        severity: 'soft',
+        message: `${NAME(appt.sisterId)} has a ${apptPeriod.toUpperCase()} appointment ${dayHuman(appt.day)} — mark this duty AM or PM to confirm it doesn't clash.`,
         scope: { kind: 'cell', day: a.day, slot: a.slot },
-        key: cellKey(a.day, a.slot, 'R21', appt.sisterId),
+        key: cellKey(a.day, a.slot, 'R21', `${appt.sisterId}-confirm`),
       });
     }
   }
@@ -750,12 +787,21 @@ export function R23_dosCookAlsoTable(week: Week): Conflict[] {
 
 /** R22. No sister appears in two job slots on the same day. (The flagship rule.)
  *
- *  Sanctioned exception: on the day of solitude, the dinner cook is *expected* to also
- *  be that day's table server (R23 — Suz: "Sometimes a sister is twice a week if they
- *  are day of solitude cook. That is the rule."). When the day's two slots are exactly
- *  {dinner, table} and that pair matches R23, R22 stays silent. Three or more slots on
- *  one day still flag.
+ *  Sanctioned same-day pairs (Suz: "some things can be together — table server and cook"):
+ *   - dinner + table
+ *   - supper + table
+ *  On day of solitude, dinner + table is *expected* (R23). Three or more slots on one
+ *  day still flag regardless of pairing.
  */
+const SANCTIONED_PAIRS: Array<readonly [Slot, Slot]> = [
+  ['dinner', 'table'],
+  ['supper', 'table'],
+];
+function isSanctionedPair(slots: Set<string>): boolean {
+  if (slots.size !== 2) return false;
+  return SANCTIONED_PAIRS.some(([a, b]) => slots.has(a) && slots.has(b));
+}
+
 export function R22_sameDayDouble(week: Week): Conflict[] {
   const c: Conflict[] = [];
   const seenKeys = new Set<string>();
@@ -771,13 +817,8 @@ export function R22_sameDayDouble(week: Week): Conflict[] {
   for (const [k, slots] of Object.entries(byDaySister)) {
     if (slots.size <= 1) continue;
     const [day, id] = k.split('::') as [DayOfWeek, string];
-    // Day-of-solitude dinner-cook is also that day's table server — sanctioned by R23.
-    const isDosCookTablePair =
-      week.daySolitude === day &&
-      slots.size === 2 &&
-      slots.has('dinner') &&
-      slots.has('table');
-    if (isDosCookTablePair) continue;
+    // Same-day cook + table is fine (Suz, May 2026).
+    if (isSanctionedPair(slots)) continue;
     for (const slot of slots) {
       const slotTyped = slot as Slot;
       const dedup = `R22::${day}::${id}::${slotTyped}`;

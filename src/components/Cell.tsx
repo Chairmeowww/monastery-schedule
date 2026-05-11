@@ -5,6 +5,7 @@ import {
   type Conflict,
   type DayOfWeek,
   type HoneyJob,
+  type Period,
   type Sister,
   type Slot,
 } from '../types';
@@ -16,6 +17,7 @@ type Props = {
   sisterIds: string[];
   note?: string;
   honeyJobs?: Record<string, HoneyJob>;
+  period?: Period;
   conflicts: Conflict[];
   dismissals: Record<string, string>;
   rosterById: Record<string, Sister>;
@@ -30,6 +32,7 @@ type Props = {
   onCellNotePrompt: (day: DayOfWeek, slot: Slot) => void;
   onClearCellNote?: (day: DayOfWeek, slot: Slot) => void;
   onSetHoneyJobForSister?: (day: DayOfWeek, sisterId: string, job: HoneyJob | null) => void;
+  onCyclePeriod?: (day: DayOfWeek, slot: Slot) => void;
   onEmptyCellClick?: () => void;
 };
 
@@ -39,6 +42,7 @@ export function Cell({
   sisterIds,
   note,
   honeyJobs,
+  period,
   conflicts,
   dismissals,
   rosterById,
@@ -53,6 +57,7 @@ export function Cell({
   onCellNotePrompt,
   onClearCellNote,
   onSetHoneyJobForSister,
+  onCyclePeriod,
   onEmptyCellClick,
 }: Props) {
   const [pickerOpenFor, setPickerOpenFor] = useState<string | null>(null);
@@ -77,6 +82,7 @@ export function Cell({
     if (target.closest('.chip')) return;
     if (target.closest('.honey-job')) return;
     if (target.closest('.add-another')) return;
+    if (target.closest('.period-toggle')) return;
     // When no sister is being placed, the conflict span owns its own click (toggle dismissal).
     // When a sister IS selected, conflict text must not block placement — let it through.
     if (!selectedSisterId) {
@@ -194,6 +200,23 @@ export function Cell({
             </button>
           )}
       </div>
+      {sisterIds.length > 0 && onCyclePeriod && (
+        <button
+          type="button"
+          className={`period-toggle no-print ${period ?? 'allday'}`}
+          title={
+            period
+              ? `This duty is ${period.toUpperCase()} only — click to change`
+              : 'Mark this duty AM or PM (currently whole day)'
+          }
+          onClick={(e) => {
+            e.stopPropagation();
+            onCyclePeriod(day, slot);
+          }}
+        >
+          {period ? period.toUpperCase() : 'all day'}
+        </button>
+      )}
       {note && (
         <span className="cell-note">
           — {note}

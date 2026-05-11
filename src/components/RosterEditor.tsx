@@ -23,6 +23,7 @@ const ABILITY_LABEL: Record<Ability, string> = {
   laundry: 'Laundry',
   ironing: 'Ironing',
   cleaning: 'Cleaning',
+  library: 'Library',
   driver: 'Driver',
 };
 

@@ -103,6 +103,11 @@ function PrintRow({
                     return job ? `${name} (${job})` : name;
                   })
                   .join(' · ')}
+                {a?.period && (
+                  <span style={{ fontSize: '7pt', color: 'var(--muted)', marginLeft: '4pt' }}>
+                    {a.period.toUpperCase()}
+                  </span>
+                )}
               </span>
             )}
             {a?.note && (

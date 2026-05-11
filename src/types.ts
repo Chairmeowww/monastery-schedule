@@ -13,6 +13,7 @@ export type Ability =
   | 'laundry'
   | 'ironing'
   | 'cleaning'
+  | 'library'
   | 'driver';
 
 export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
@@ -50,6 +51,8 @@ export type Slot =
   | 'garden'
   | 'honey'
   | 'cleaning'
+  | 'library'
+  | 'meeting'
   | 'driver';
 
 export const SLOTS: Slot[] = [
@@ -63,6 +66,8 @@ export const SLOTS: Slot[] = [
   'garden',
   'honey',
   'cleaning',
+  'library',
+  'meeting',
   'driver',
 ];
 
@@ -77,8 +82,13 @@ export const SLOT_LABEL: Record<Slot, string> = {
   garden: 'Garden',
   honey: 'Honey',
   cleaning: 'Cleaning',
+  library: 'Library',
+  meeting: 'Meeting',
   driver: 'Driver',
 };
+
+/** Time-of-day marker for an assignment or an appointment. Undefined = whole day / unspecified. */
+export type Period = 'am' | 'pm';
 
 /** Slot label as Suz reads it on Sunday — Lunch (noon, soup+cheese) and Main Meal (evening). */
 export function slotLabelForDay(slot: Slot, day: DayOfWeek): string {
@@ -103,6 +113,8 @@ export type Assignment = {
   slot: Slot;
   sisterIds: string[];
   note?: string;
+  /** AM-only or PM-only marker. Undefined = whole day / flexible. */
+  period?: Period;
   /** Honey crew: each sister's specific job within the crew (Mix/Fill/Labels/Lids). */
   honeyJobs?: Record<string, HoneyJob>;
   /** @deprecated single-job legacy field; migrated to honeyJobs at load. */
@@ -113,6 +125,9 @@ export type Appointment = {
   sisterId: string;
   day: DayOfWeek;
   type: string;
+  /** When this appointment runs. Undefined = all day (e.g. Eureka/Santa Rosa trips).
+   *  'am' = morning only (e.g. Redway/Garberville) — sister can still work that afternoon. */
+  period?: Period;
 };
 
 export type PrivateSolitude = {

@@ -652,6 +652,50 @@
   font-style: italic;
 }
 
+/* AM/PM/all-day toggle inside a cell */
+.period-toggle {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 4px;
+  padding: 1px 8px;
+  font-size: 10px;
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  border-radius: 3px;
+  border: 1px solid var(--hair-light);
+  background: transparent;
+  color: var(--muted);
+  font-style: italic;
+  cursor: pointer;
+  line-height: 1.5;
+}
+.period-toggle.am,
+.period-toggle.pm {
+  color: var(--ink);
+  background: var(--chip-bg);
+  border-color: var(--chip-border);
+  font-style: normal;
+}
+.period-toggle:hover { border-color: var(--chip-accent); color: var(--ink); }
+
+/* Appointment period dropdown */
+.appt-period {
+  font-size: var(--fs-xs);
+  font-style: italic;
+  border: none;
+  background: transparent;
+  padding: 1px 2px;
+  margin-top: 2px;
+  width: 100%;
+  min-width: 0;
+  color: var(--muted);
+}
+.appt-period:hover {
+  background: var(--paper);
+  border-radius: 3px;
+  color: var(--ink);
+}
+
 /* "+ add another sister" affordance inside a populated cell */
 .add-another {
   display: inline-flex;

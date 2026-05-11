@@ -18,6 +18,7 @@ const ALL_ABILITIES: Ability[] = [
   'laundry',
   'ironing',
   'cleaning',
+  'library',
   'driver',
 ];
 
