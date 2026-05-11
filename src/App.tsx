@@ -10,7 +10,7 @@ import {
   loadStandingPattern,
   migrateWeek,
 } from './data/defaults';
-import { initRoster, saveActiveRoster } from './data/rosterStore';
+import { initRoster, makeGuestSister, saveActiveRoster } from './data/rosterStore';
 import { ROSTER, SISTER_BY_ID } from './data/roster';
 import { validateWeek } from './rules';
 import { useUndoable } from './hooks/useUndoable';
@@ -397,6 +397,21 @@ export function App() {
     }
   };
 
+  const onAddGuest = () => {
+    const name = window.prompt('Guest sister’s name?');
+    if (!name) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (roster.some((s) => s.name.toLowerCase() === trimmed.toLowerCase())) {
+      window.alert('A sister with that name is already in the list — pick a different name (e.g. add a last initial).');
+      return;
+    }
+    const guest = makeGuestSister(trimmed);
+    saveActiveRoster([...roster, guest]);
+    setRoster([...ROSTER]);
+    setSelectedSisterId(guest.id);
+  };
+
   return (
     <div className="app">
       <WeekHeader week={week} conflicts={conflicts} onWeekOfChange={switchToWeek} />
@@ -458,6 +473,7 @@ export function App() {
           onImportStandingPattern={onImportStandingPattern}
           onShowTour={openTour}
           onManageRoster={() => setShowRosterEditor(true)}
+          onAddGuest={onAddGuest}
           standingSavedAt={standingSavedAt}
         />
       </div>

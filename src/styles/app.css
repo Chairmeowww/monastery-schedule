@@ -739,6 +739,38 @@
   white-space: normal;
 }
 
+/* Guest sister: visually distinct from permanent community */
+.palette .chips .is-guest .chip {
+  border-style: dashed;
+  background: transparent;
+}
+.palette .chips .is-guest .chip::before {
+  content: 'guest · ';
+  font-size: 9px;
+  font-variant: small-caps;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-style: normal;
+  margin-right: 2px;
+}
+.guest-add-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px dashed var(--hair-light);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-style: italic;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.guest-add-btn:hover {
+  border-color: var(--chip-accent);
+  color: var(--ink);
+}
+
 /* Manage sisters link */
 .manage-roster {
   align-self: flex-start;

@@ -15,6 +15,7 @@ type Props = {
   onImportStandingPattern: (file: File) => void;
   onShowTour: () => void;
   onManageRoster: () => void;
+  onAddGuest: () => void;
   /** ISO timestamp of the most recent "Set as default", or null if never customized. */
   standingSavedAt: string | null;
 };
@@ -32,6 +33,7 @@ export function SisterPalette({
   onImportStandingPattern,
   onShowTour,
   onManageRoster,
+  onAddGuest,
   standingSavedAt,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -48,19 +50,34 @@ export function SisterPalette({
     <aside className="palette no-print" aria-label="Sister palette">
       <h2>Sisters</h2>
       <div className="chips">
-        {stats.map(({ sister, count, hasAppointment }) => (
-          <span key={sister.id} data-sister-id={sister.id}>
-            <SisterChip
-              sister={sister}
-              count={count}
-              showCount
-              hasAppointment={hasAppointment}
-              selected={selectedSisterId === sister.id}
-              tip="Click, then click a cell to assign"
-              onClick={() => onSelectSister(selectedSisterId === sister.id ? null : sister.id)}
-            />
-          </span>
-        ))}
+        {stats.map(({ sister, count, hasAppointment }) => {
+          const isGuest = sister.restrictions.includes('Guest sister');
+          return (
+            <span
+              key={sister.id}
+              data-sister-id={sister.id}
+              className={isGuest ? 'is-guest' : undefined}
+            >
+              <SisterChip
+                sister={sister}
+                count={count}
+                showCount
+                hasAppointment={hasAppointment}
+                selected={selectedSisterId === sister.id}
+                tip={isGuest ? 'Guest sister — click, then click a cell' : 'Click, then click a cell to assign'}
+                onClick={() => onSelectSister(selectedSisterId === sister.id ? null : sister.id)}
+              />
+            </span>
+          );
+        })}
+        <button
+          type="button"
+          className="guest-add-btn"
+          onClick={onAddGuest}
+          title="Add a visiting sister just for this stretch"
+        >
+          + Guest sister
+        </button>
       </div>
       <p className="help">
         Click a sister, then click a cell to assign her. To add a second sister to the same cell,

@@ -73,6 +73,19 @@ export function makeNewSister(name: string): Sister {
   };
 }
 
+/** Guest sister — visiting, may pitch in on anything. Marked so they're visually
+ *  distinguishable in the palette and easy to remove when they leave. */
+export function makeGuestSister(name: string): Sister {
+  const trimmed = name.trim() || 'Guest sister';
+  const id = `guest_${slugify(trimmed)}_${Date.now().toString(36)}`;
+  return {
+    id,
+    name: trimmed,
+    abilities: [...ALL_ABILITIES],
+    restrictions: ['Guest sister'],
+  };
+}
+
 function slugify(s: string): string {
   return s
     .toLowerCase()
